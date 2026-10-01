@@ -1,0 +1,54 @@
+---
+layout: layouts/base.njk
+title: Research
+description: Working papers, publications and policy work by Muhammad Salman Khalid.
+---
+<div class="wrap narrow">
+  <header class="page-head">
+    <div class="eyebrow">Research</div>
+    <h1>Research</h1>
+    <p class="lede">My research applies modern difference in differences and synthetic control methods to questions in health, crime and development, with a focus on credible identification from staggered policy adoption.</p>
+    <div class="btn-row">
+      <a class="btn" href="{{ site.links.scholar }}" rel="noopener">Google Scholar ↗</a>
+      <a class="btn" href="{{ site.links.ssrn }}" rel="noopener">SSRN ↗</a>
+      <a class="btn" href="{{ site.links.dissertation }}" rel="noopener">Dissertation ↗</a>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:24px">
+    <h2>Under review</h2>
+    <ul class="list">{% for p in research.underReview %}{% include "paper.njk" %}{% endfor %}</ul>
+  </section>
+
+  <section class="section">
+    <h2>Working papers</h2>
+    <ul class="list">{% for p in research.working %}{% include "paper.njk" %}{% endfor %}</ul>
+  </section>
+
+  <section class="section">
+    <h2>Work in progress</h2>
+    <ul class="list">{% for p in research.progress %}{% include "paper.njk" %}{% endfor %}</ul>
+    {% if research.agenda %}<p style="color:var(--muted);margin-top:16px">{{ research.agenda }}</p>{% endif %}
+  </section>
+
+  <section class="section">
+    <h2>Peer reviewed</h2>
+    <ul class="list">{% for p in research.published %}{% include "paper.njk" %}{% endfor %}</ul>
+  </section>
+
+  <section class="section">
+    <h2>Policy reports and briefs</h2>
+    <ul class="list">{% for p in research.policy %}{% include "paper.njk" %}{% endfor %}</ul>
+  </section>
+
+  <section class="section">
+    <h2>Grants and honors</h2>
+    <ul class="timeline">
+      <li><span>SESS Competitive Research Grant, principal investigator<small>Wealth Transfer from Developed Nations to Developing Nations during COVID</small></span><span>2024</span></li>
+      <li><span>American Institute for Economic Research Award</span><span>2021 to 2022</span></li>
+      <li><span>Runner up, National Institute of Justice Recidivism Forecasting Challenge</span><span>2021</span></li>
+      <li><span>Fulbright Scholar</span><span>2019 to 2024</span></li>
+      <li><span>CGU Trustee Fellowship</span><span>2019 to 2020</span></li>
+    </ul>
+  </section>
+</div>

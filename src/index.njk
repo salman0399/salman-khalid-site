@@ -1,0 +1,69 @@
+---
+layout: layouts/base.njk
+---
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      {% if site.jobMarket %}<span class="badge"><span class="dot"></span>On the 2026 to 2027 academic job market</span>{% endif %}
+      <h1>{{ site.title }}</h1>
+      <p class="role">{{ site.role }}, {{ site.affiliation }}</p>
+      <div class="bio">
+        <p>I am an applied economist who uses modern causal inference to study health, crime and development. My work asks when public policy actually changes outcomes for families, from paid sick leave and adolescent mental health in the United States to digital monitoring of vaccinators in Punjab.</p>
+        <p>I hold a PhD in Economics from Claremont Graduate University, where I was a Fulbright scholar, and degrees in economics from LUMS. At IBA Karachi I teach applied econometrics and data analytics and direct the Economic Growth and Forecasting Lab. I also write for Dawn and The Express Tribune on Pakistan's economy.</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn primary" href="/cv/">View CV</a>
+        <a class="btn" href="/research/">Research</a>
+        <a class="btn" href="mailto:{{ site.email }}">Get in touch</a>
+      </div>
+    </div>
+    <div class="hero-photo"><img src="{{ site.photo }}" alt="Portrait of {{ site.title }}" width="560" height="700"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">Research interests</div>
+    <ul class="chips">{% for i in research.interests %}<li>{{ i }}</li>{% endfor %}</ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>Selected research</h2><a class="more" href="/research/">All research →</a></div>
+    <ul class="list">
+      {% for p in research.underReview %}{% include "paper.njk" %}{% endfor %}
+      {% for p in research.working | limit(2) %}{% include "paper.njk" %}{% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>Teaching</h2><a class="more" href="/teaching/">Lectures and labs →</a></div>
+    <div class="grid grid-3">
+      {% for c in collections.courses | limit(3) %}
+      <a class="card" href="{{ c.url }}">
+        <div class="code">{{ c.data.code }}</div>
+        <h3>{{ c.data.title }}</h3>
+        <p>{{ c.data.summary }}</p>
+        <div class="meta">{{ c.data.level }}{% if c.data.terms %} · {{ c.data.terms }}{% endif %}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>Latest writing</h2><a class="more" href="/blog/">All posts →</a></div>
+    <ul class="list">
+      {% for post in collections.posts | limit(3) %}
+      <li class="item post-row">
+        <span class="date">{{ post.date | readableDate }}</span>
+        <div><h3><a href="{{ post.url }}">{{ post.data.title }}</a></h3>{% if post.data.summary %}<p class="abstract">{{ post.data.summary }}</p>{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>

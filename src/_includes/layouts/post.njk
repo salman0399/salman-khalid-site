@@ -1,0 +1,18 @@
+---
+layout: layouts/base.njk
+---
+<article class="wrap narrow">
+  <header class="post-head">
+    <time class="date" datetime="{{ page.date | isoDate }}">{{ page.date | readableDate }} · {{ content | readingTime }}</time>
+    <h1>{{ title }}</h1>
+    {% if summary %}<p class="lede">{{ summary }}</p>{% endif %}
+    {% if tags %}<ul class="chips" style="margin-top:14px">{% for t in tags %}{% if t != "post" %}<li>{{ t }}</li>{% endif %}{% endfor %}</ul>{% endif %}
+  </header>
+  <div class="prose">
+    {{ content | safe }}
+  </div>
+  <footer class="post-foot">
+    <a href="/blog/">← All writing</a>
+    <span>Comments or questions? <a href="mailto:{{ site.email }}?subject=Re: {{ title | urlencode }}">Email me</a></span>
+  </footer>
+</article>

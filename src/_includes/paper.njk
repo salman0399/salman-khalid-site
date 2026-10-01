@@ -1,0 +1,9 @@
+<li class="item">
+  <h3>{{ p.title }}</h3>
+  {% if p.authors %}<div class="authors">{{ p.authors }}</div>{% endif %}
+  <span class="status{% if 'Submitted' in p.status %} sub{% endif %}">{{ p.status }}</span>
+  {% if p.abstract %}<p class="abstract">{{ p.abstract }}</p>{% endif %}
+  {% if p.links and p.links.length %}
+  <div class="links">{% for l in p.links %}<a href="{{ l.url }}" rel="noopener">{{ l.label }} ↗</a>{% endfor %}</div>
+  {% endif %}
+</li>

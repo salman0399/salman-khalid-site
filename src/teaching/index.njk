@@ -1,0 +1,48 @@
+---
+layout: layouts/base.njk
+title: Teaching
+description: Courses, lecture slides and lab materials by Muhammad Salman Khalid.
+---
+<div class="wrap">
+  <header class="page-head">
+    <div class="eyebrow">Teaching</div>
+    <h1>Teaching</h1>
+    <p class="lede">I teach applied econometrics, data analytics and health economics at IBA Karachi. Lecture slides, lab notebooks and datasets are posted below for students and anyone learning these methods on their own.</p>
+  </header>
+
+  <section class="section" style="padding-top:24px">
+    <div class="grid grid-2">
+      {% for c in collections.courses %}
+      <a class="card" href="{{ c.url }}">
+        {% if c.data.code %}<div class="code">{{ c.data.code }}</div>{% endif %}
+        <h3>{{ c.data.title }}</h3>
+        <p>{{ c.data.summary }}</p>
+        <div class="meta">{{ c.data.level }}{% if c.data.terms %} · {{ c.data.terms }}{% endif %}{% set n = (c.data.lectures.length or 0) + (c.data.labs.length or 0) %}{% if n %} · {{ n }} items{% endif %}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="split" style="border-top:0;padding-top:0">
+      <h2>Workshops</h2>
+      <ul class="timeline">
+        <li><span>Introduction to Causal Inference<small>One day open workshop for students, researchers and faculty, IBA Karachi</small></span><span>2026</span></li>
+        <li><span>Why Some Countries Are Left Behind<small>Half day training on economic complexity and the product space for EMBA candidates, IBA Karachi</small></span><span></span></li>
+      </ul>
+    </div>
+    <div class="split">
+      <h2>Supervision</h2>
+      <p>Ten undergraduate final year theses at IBA Karachi.</p>
+    </div>
+    <div class="split">
+      <h2>Earlier teaching</h2>
+      <ul class="timeline">
+        <li><span>California State University, Los Angeles<small>Visiting faculty</small></span><span></span></li>
+        <li><span>Claremont Graduate University<small>Teaching assistant, Econometrics II</small></span><span></span></li>
+        <li><span>Beaconhouse National University<small>Visiting faculty, Operations Management and Applied Business Forecasting</small></span><span></span></li>
+        <li><span>Lahore University of Management Sciences<small>Teaching assistant</small></span><span></span></li>
+      </ul>
+    </div>
+  </section>
+</div>

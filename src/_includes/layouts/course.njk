@@ -1,0 +1,56 @@
+---
+layout: layouts/base.njk
+---
+{% macro materialTable(rows, label) %}
+{% if rows and rows.length %}
+<table class="materials">
+  <thead><tr><th>#</th><th>{{ label }}</th><th style="text-align:right">Files</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="n">{{ loop.index }}</td>
+      <td>{{ r.title }}{% if r.desc %}<span class="desc">{{ r.desc }}</span>{% endif %}</td>
+      <td class="files">{% for f in r.files %}{% if f.url %}<a class="file" href="{{ f.url }}" target="_blank" rel="noopener">{{ f.label }}</a>{% else %}<a class="file" href="{{ f }}" target="_blank" rel="noopener">{{ f | ext }}</a>{% endif %}{% endfor %}{% if r.link %}<a class="file" href="{{ r.link }}" rel="noopener">LINK</a>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Materials will be posted here as the term progresses.</p>
+{% endif %}
+{% endmacro %}
+
+<div class="wrap narrow">
+  <header class="page-head">
+    <div class="eyebrow"><a href="/teaching/">Teaching</a>{% if code %} · {{ code }}{% endif %}</div>
+    <h1>{{ title }}</h1>
+    <p class="lede">{{ summary }}</p>
+    <ul class="chips" style="margin-top:16px">
+      {% if level %}<li>{{ level }}</li>{% endif %}
+      {% if terms %}<li>{{ terms }}</li>{% endif %}
+      {% if textbook %}<li>{{ textbook }}</li>{% endif %}
+      {% if software %}<li>{{ software }}</li>{% endif %}
+    </ul>
+  </header>
+
+  {% if content | trim %}<div class="prose" style="margin-bottom:24px">{{ content | safe }}</div>{% endif %}
+
+  <section class="section" style="padding-top:24px">
+    <h2>Lectures</h2>
+    {{ materialTable(lectures, "Topic") }}
+  </section>
+
+  {% if labs or showLabs %}
+  <section class="section">
+    <h2>Labs</h2>
+    {{ materialTable(labs, "Lab") }}
+  </section>
+  {% endif %}
+
+  {% if other and other.length %}
+  <section class="section">
+    <h2>Other resources</h2>
+    {{ materialTable(other, "Resource") }}
+  </section>
+  {% endif %}
+</div>

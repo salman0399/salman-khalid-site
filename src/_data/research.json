@@ -1,0 +1,90 @@
+{
+  "interests": [
+    "Applied microeconomics",
+    "Causal inference",
+    "Health economics",
+    "Economics of crime",
+    "Development economics",
+    "Public finance"
+  ],
+  "underReview": [
+    {
+      "title": "When Parents Can Spare Time: Paid Sick Leave and Adolescent Mental Health",
+      "authors": "with Anwar Assamidanov",
+      "status": "Submitted, American Journal of Health Economics",
+      "abstract": "We study how state paid sick leave mandates shape adolescent mental health in the United States. Using a staggered difference in differences design with data from the National Survey of Children's Health and the Youth Risk Behavior Surveillance System, we find that access to paid sick leave raises the use of mental health care among adolescents and lowers self reported depressive symptoms.",
+      "links": [
+        {
+          "label": "SSRN",
+          "url": "https://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=4912076"
+        }
+      ]
+    }
+  ],
+  "working": [
+    {
+      "title": "Efficacy of Technology Aided Monitoring for Early Childhood Vaccination Coverage: Evidence from a Natural Experiment",
+      "authors": "with Umair Ali",
+      "status": "Working paper",
+      "abstract": "We evaluate the electronic vaccination monitoring system rolled out across Punjab, Pakistan, using household survey data and a difference in differences design to ask whether digital oversight of vaccinators raised immunization coverage.",
+      "links": [
+        {
+          "label": "SSRN",
+          "url": "https://doi.org/10.2139/ssrn.3962598"
+        }
+      ]
+    },
+    {
+      "title": "Revisiting Unilateral Divorce, Health, and Crime",
+      "authors": "with Morgan Stockham and Anwar Assamidanov",
+      "status": "Working paper",
+      "abstract": "We revisit the classic evidence on unilateral divorce laws using modern staggered adoption estimators, including the Goodman Bacon decomposition, doubly robust difference in differences and the Callaway and Sant'Anna estimator.",
+      "links": []
+    }
+  ],
+  "progress": [
+    {
+      "title": "Are Police Trainings Effective in Providing Procedural Justice? Evidence from the Dallas Police Department",
+      "authors": "Sole authored",
+      "status": "Work in progress",
+      "abstract": "",
+      "links": []
+    }
+  ],
+  "published": [
+    {
+      "title": "Iterative Design of an Immunization Information System in Pakistan",
+      "authors": "Razaq, Batool, Ali, Khalid, Saif and Naseem",
+      "status": "ACM DEV 2016",
+      "abstract": "",
+      "links": [
+        {
+          "label": "DOI",
+          "url": "https://doi.org/10.1145/3001913.3001925"
+        }
+      ]
+    }
+  ],
+  "policy": [
+    {
+      "title": "Missed Opportunity: Revisiting Pakistan's Choices",
+      "authors": "Editor",
+      "status": "State of Pakistan's Economy 2024-25, IBA Karachi",
+      "abstract": "",
+      "links": []
+    },
+    {
+      "title": "Inclusion of People with Disability in Pakistan's Third Tier Organizations",
+      "authors": "with Ahmed, Gul, Quinn and Vyborny",
+      "status": "Policy brief, PPAF, 2019",
+      "abstract": "",
+      "links": [
+        {
+          "label": "PDF",
+          "url": "https://www.ppaf.org.pk/doc/PolicyBriefs/Inclusion-of-People-with-Disability-in-TTOs.pdf"
+        }
+      ]
+    }
+  ],
+  "agenda": "Two newer projects are under way. One examines how recent floods disrupted Pakistan's supply driven health system and what that meant for health outcomes. The other measures how smog in Lahore has affected yields of major crops."
+}

@@ -1,0 +1,34 @@
+{
+  "opeds": [
+    {
+      "date": "June 2026",
+      "title": "90% Inflation Trap That Resets No Tax Bracket",
+      "outlet": "The Express Tribune",
+      "url": "https://tribune.com.pk/story/2610764/90-inflation-trap-that-resets-no-tax-bracket",
+      "note": "Bracket creep and the case for indexing tax slabs"
+    },
+    {
+      "date": "July 2025",
+      "title": "Water Scarcity in Pakistan, a Geopolitical Ticking Time Bomb",
+      "outlet": "Dawn",
+      "url": "https://www.dawn.com/news/1913435/water-scarcity-in-pakistan-a-geopolitical-ticking-time-bomb",
+      "note": "With Sahar Arshad Mahmood"
+    }
+  ],
+  "appearances": [
+    {
+      "date": "June 2026",
+      "title": "Khabar Mohammad Malick Kay Saath",
+      "outlet": "ARY News",
+      "url": "https://www.youtube.com/watch?v=UeB8s_zGavg",
+      "note": "Pre budget discussion of bracket creep in the income tax schedule."
+    },
+    {
+      "date": "June 2026",
+      "title": "Narratives with Munazza Siddiqui",
+      "outlet": "Narrative TV podcast",
+      "url": "https://www.youtube.com/watch?v=W2Ns-OR069g",
+      "note": "Tax bracket indexation and what it means for the salaried middle class."
+    }
+  ]
+}
