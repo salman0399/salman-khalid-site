@@ -34,5 +34,14 @@ lectures:
     files:
       - { label: "SLIDES", url: /files/eco344/ch05-slides.pdf }
       - { label: "NOTES", url: /files/eco344/ch05-notes.pdf }
-labs: []
+labs:
+  - title: "Introduction to R and RStudio"
+    desc: "Setup, objects, vectors, data frames, importing CSV files and basic plots"
+    files: [/files/eco344/labs/lab01-introduction-to-r.pdf, /files/eco344/labs/lab01-introduction-to-r.Rmd]
+  - title: "Understanding OLS Through Simulation"
+    desc: "Population, sampling and the sampling distribution of the OLS estimator"
+    files: [/files/eco344/labs/lab02-ols-simulation.pdf, /files/eco344/labs/lab02-ols-simulation.Rmd]
+  - title: "Hypothesis Testing Through Simulation"
+    desc: "Type I error, Type II error and power across 10,000 samples"
+    files: [/files/eco344/labs/lab03-inference.pdf, /files/eco344/labs/lab03-inference.Rmd]
 ---
