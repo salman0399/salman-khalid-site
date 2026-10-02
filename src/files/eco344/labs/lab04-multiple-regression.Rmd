@@ -1,0 +1,592 @@
+---
+title: "Lab 4, Multiple Regression and Inference with Real Data"
+subtitle: Estimation, Regression Tables, t, F and LM Tests, Logs, and Diagnostic Plots
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = "center")
+```
+
+# Introduction
+
+In Labs 2 and 3 we worked with a population we built ourselves, so we always knew the true slope. Real research is different. We get one sample, we never see the truth, and everything we say about the population has to come from that one sample. This lab moves to real data and walks through the full routine of an applied regression exercise, from estimation to a results table to hypothesis tests to diagnostic plots.
+
+We use the `hprice1` dataset from Wooldridge, which records the sale price and characteristics of 88 houses in the Boston area. The question is a familiar one in applied work. How much is an extra square foot, an extra bedroom, or a bigger lot worth to a buyer, holding the other features of the house constant?
+
+By the end of this lab you should be able to do the following.
+
+1. Load a Wooldridge dataset and estimate a multiple regression with `lm()`.
+2. Present the results in a regression table.
+3. Store coefficients, standard errors, R squared and other estimates in objects and report them inside your text.
+4. Run two tailed and one tailed t tests by hand and with a command.
+5. Run an F test of joint exclusion restrictions by hand and with a command.
+6. Run an LM test by hand and with a command.
+7. Create log variables and estimate a model in logs.
+8. Draw the graphs that are useful after a regression.
+9. Draw plots that help you detect heteroskedasticity.
+
+# Packages and data
+
+We need four packages. If any of them is missing on your computer, install it once with `install.packages()` and then load it with `library()`.
+
+```{r install, eval=FALSE}
+install.packages(c("wooldridge", "stargazer", "car", "ggplot2"))
+```
+
+```{r packages}
+library(wooldridge)
+library(stargazer)
+library(car)
+library(ggplot2)
+```
+
+The `wooldridge` package carries every dataset used in the textbook. The `data()` command loads one of them into the Environment.
+
+```{r data}
+data("hprice1")
+str(hprice1)
+```
+
+We will use five variables. `price` is the sale price in thousands of dollars, `lotsize` is the size of the lot in square feet, `sqrft` is the size of the house in square feet, `bdrms` is the number of bedrooms, and `colonial` is a dummy equal to one if the house is built in the colonial style. You can read the full description by typing `?hprice1` in the Console.
+
+```{r summary}
+summary(hprice1[, c("price", "lotsize", "sqrft", "bdrms", "colonial")])
+```
+
+# Estimating a multiple regression
+
+The model is
+
+$$price = \beta_0 + \beta_1 \, lotsize + \beta_2 \, sqrft + \beta_3 \, bdrms + \beta_4 \, colonial + u$$
+
+The syntax of `lm()` is the same as in simple regression. We just add the extra regressors with a plus sign.
+
+```{r model-level}
+model_level <- lm(price ~ lotsize + sqrft + bdrms + colonial, data = hprice1)
+summary(model_level)
+```
+
+Each slope is a partial effect. The coefficient on `sqrft` tells us how the predicted price changes when the house is one square foot larger, holding lot size, bedrooms and style constant.
+
+# A regression table
+
+The output of `summary()` is fine for our own eyes but it is not how results appear in a paper. The `stargazer()` function turns one or more models into a publication style table with standard errors in parentheses under each coefficient.
+
+When you work in the Console or in an R script, use `type = "text"` to see the table on screen.
+
+```{r table-text}
+stargazer(model_level, type = "text")
+```
+
+Inside an R Markdown document we want a properly typeset table. For that we set `type = "latex"` when knitting to PDF or `type = "html"` when knitting to HTML, and we add `results = 'asis'` to the chunk header so that the table is printed as it is. The line below picks the right type for us.
+
+```{r table-type}
+table_type <- ifelse(knitr::is_latex_output(), "latex", "html")
+```
+
+```{r table-level, results='asis'}
+stargazer(model_level,
+          type = table_type,
+          header = FALSE,
+          title = "Determinants of house prices",
+          label = "tab:level",
+          dep.var.labels = "Price in thousands of dollars",
+          covariate.labels = c("Lot size", "Square feet", "Bedrooms", "Colonial"),
+          digits = 4,
+          omit.stat = "ser")
+```
+
+# Storing estimates and using them in text
+
+Typing numbers from the output into your text by hand invites mistakes, and the numbers go stale the moment you change the model. A better habit is to store every estimate in an object and let R write the number into the sentence.
+
+Everything we need lives inside the model object and its summary.
+
+```{r store}
+sum_level <- summary(model_level)
+
+b <- coef(model_level)
+se <- sqrt(diag(vcov(model_level)))
+
+b
+se
+```
+
+Both `b` and `se` are named vectors, so we can pull out any element by the name of its variable.
+
+```{r store-pieces}
+b_sqrft <- b["sqrft"]
+se_sqrft <- se["sqrft"]
+b_bdrms <- b["bdrms"]
+se_bdrms <- se["bdrms"]
+
+r2 <- sum_level$r.squared
+adj_r2 <- sum_level$adj.r.squared
+sigma_hat <- sum_level$sigma
+
+n <- nobs(model_level)
+k <- length(b) - 1
+df_ur <- df.residual(model_level)
+ssr_ur <- sum(resid(model_level)^2)
+
+c(n = n, k = k, df = df_ur, r2 = r2, adj_r2 = adj_r2, sigma_hat = sigma_hat, ssr = ssr_ur)
+```
+
+To place a stored value inside a sentence in R Markdown, write a backtick, the letter r, a space, the R expression, and a closing backtick. For example, typing
+
+```{r inline-demo, echo=FALSE, comment=""}
+cat("The coefficient on sqrft is `r round(b_sqrft, 3)`.")
+```
+
+produces the sentence "The coefficient on sqrft is `r round(b_sqrft, 3)`." when the document is knitted. The paragraph below was written entirely this way, so not a single number in it was typed by hand.
+
+The sample has `r n` houses and the model has `r k` regressors, which leaves `r df_ur` degrees of freedom. An extra square foot raises the predicted price by `r round(1000 * b_sqrft, 0)` dollars, holding the other regressors constant, with a standard error of `r round(1000 * se_sqrft, 0)` dollars. An extra bedroom raises the predicted price by `r round(b_bdrms, 2)` thousand dollars with a standard error of `r round(se_bdrms, 2)`. The model explains `r round(100 * r2, 1)` percent of the variation in price, and the adjusted R squared is `r round(adj_r2, 3)`. The standard error of the regression is `r round(sigma_hat, 2)` thousand dollars.
+
+# The t test
+
+## Two tailed test
+
+We start with the test that `summary()` reports by default. For the bedrooms coefficient,
+
+$$H_0 \colon \beta_3 = 0 \qquad \text{against} \qquad H_1 \colon \beta_3 \neq 0$$
+
+The t statistic is the estimate minus the hypothesized value, divided by the standard error. We compare it with the critical value from a t distribution with $n - k - 1$ degrees of freedom, and we get the p value as the area in both tails beyond the statistic.
+
+```{r t-two-manual}
+alpha <- 0.05
+
+t_bdrms <- (b_bdrms - 0) / se_bdrms
+crit_two <- qt(1 - alpha / 2, df = df_ur)
+p_two <- 2 * pt(abs(t_bdrms), df = df_ur, lower.tail = FALSE)
+
+c(t = unname(t_bdrms), critical_value = crit_two, p_value = unname(p_two))
+```
+
+The command version is already in the coefficient table of the summary. The columns `t value` and `Pr(>|t|)` match what we just computed.
+
+```{r t-two-command}
+coef(sum_level)
+coef(sum_level)["bdrms", ]
+```
+
+The t statistic of `r round(t_bdrms, 2)` is smaller in absolute value than the critical value of `r round(crit_two, 2)`, and the p value of `r round(p_two, 3)` is above 0.05. We fail to reject the null at the 5 percent level. Once house size, lot size and style are held constant, the data cannot tell the effect of an extra bedroom apart from zero.
+
+The same logic gives a 95 percent confidence interval, which we can build by hand or with `confint()`.
+
+```{r ci}
+c(lower = unname(b_bdrms - crit_two * se_bdrms), upper = unname(b_bdrms + crit_two * se_bdrms))
+confint(model_level, "bdrms", level = 0.95)
+```
+
+## One tailed test
+
+Economic reasoning often tells us the sign of an effect in advance. Nobody expects an extra bedroom to lower the price of a house, so a one sided alternative is sensible.
+
+$$H_0 \colon \beta_3 = 0 \qquad \text{against} \qquad H_1 \colon \beta_3 > 0$$
+
+The t statistic does not change. What changes is the rejection rule. All of the 5 percent now sits in the right tail, so the critical value is smaller and the p value is the area to the right of the statistic only.
+
+```{r t-one-manual}
+crit_one <- qt(1 - alpha, df = df_ur)
+p_one <- pt(t_bdrms, df = df_ur, lower.tail = FALSE)
+
+c(t = unname(t_bdrms), critical_value = crit_one, p_value = unname(p_one))
+```
+
+R has no separate command for a one tailed test in a regression, and it does not need one. When the estimate has the sign predicted by the alternative, the one tailed p value is half of the two tailed p value from the summary.
+
+```{r t-one-command}
+coef(sum_level)["bdrms", "Pr(>|t|)"] / 2
+```
+
+The one tailed p value is `r round(p_one, 3)` and the critical value is `r round(crit_one, 2)`. The p value is exactly half of the two tailed one, so a one sided alternative always makes it easier to reject. Here the t statistic of `r round(t_bdrms, 2)` still falls short of the critical value, and we `r ifelse(p_one < alpha, "reject", "fail to reject")` the null at the 5 percent level. Because the one tailed test is the more lenient of the two, the choice of alternative must come from economic reasoning made before looking at the estimates, not from a wish to see a star in the table.
+
+## Testing a value other than zero
+
+The null does not have to be zero. Suppose a real estate agent claims that every extra square foot adds 100 dollars to the price. Since price is measured in thousands, the claim is
+
+$$H_0 \colon \beta_2 = 0.10 \qquad \text{against} \qquad H_1 \colon \beta_2 \neq 0.10$$
+
+```{r t-value-manual}
+t_sqrft <- (b_sqrft - 0.10) / se_sqrft
+p_sqrft <- 2 * pt(abs(t_sqrft), df = df_ur, lower.tail = FALSE)
+
+c(t = unname(t_sqrft), p_value = unname(p_sqrft))
+```
+
+The `linearHypothesis()` function from the `car` package runs this test with one line. It reports an F statistic, which for a single restriction is the square of the t statistic, so the p value is identical.
+
+```{r t-value-command}
+linearHypothesis(model_level, "sqrft = 0.10")
+unname(t_sqrft^2)
+```
+
+# The F test
+
+A t test handles one restriction. To test several at once we need the F test. Bedrooms and colonial style both look weak on their own, so we ask whether they matter jointly.
+
+$$H_0 \colon \beta_3 = 0 \ \text{and} \ \beta_4 = 0 \qquad \text{against} \qquad H_1 \colon H_0 \ \text{is not true}$$
+
+## By hand
+
+The unrestricted model is the one we already estimated. The restricted model imposes the null by dropping the two variables. The F statistic compares how much the sum of squared residuals rises when we impose the restrictions.
+
+$$F = \frac{(SSR_r - SSR_{ur}) / q}{SSR_{ur} / (n - k - 1)}$$
+
+```{r f-manual}
+model_restricted <- lm(price ~ lotsize + sqrft, data = hprice1)
+
+ssr_r <- sum(resid(model_restricted)^2)
+q <- 2
+
+F_stat <- ((ssr_r - ssr_ur) / q) / (ssr_ur / df_ur)
+F_crit <- qf(1 - alpha, df1 = q, df2 = df_ur)
+F_p <- pf(F_stat, df1 = q, df2 = df_ur, lower.tail = FALSE)
+
+c(F = F_stat, critical_value = F_crit, p_value = F_p)
+```
+
+Because both models have the same dependent variable, the R squared form of the statistic gives exactly the same number.
+
+$$F = \frac{(R^2_{ur} - R^2_r) / q}{(1 - R^2_{ur}) / (n - k - 1)}$$
+
+```{r f-manual-r2}
+r2_r <- summary(model_restricted)$r.squared
+
+((r2 - r2_r) / q) / ((1 - r2) / df_ur)
+```
+
+## By command
+
+There are two convenient commands. `anova()` takes the restricted and the unrestricted model, and `linearHypothesis()` takes the unrestricted model and the restrictions written out as text.
+
+```{r f-command}
+anova(model_restricted, model_level)
+
+linearHypothesis(model_level, c("bdrms = 0", "colonial = 0"))
+```
+
+The F statistic is `r round(F_stat, 2)` against a 5 percent critical value of `r round(F_crit, 2)`, with a p value of `r round(F_p, 3)`. We `r ifelse(F_p < alpha, "reject", "fail to reject")` the null that bedrooms and colonial style are jointly irrelevant at the 5 percent level.
+
+## Overall significance of the regression
+
+The F statistic printed at the bottom of `summary()` tests the null that all slopes are zero. The restricted model then contains only an intercept, its R squared is zero, and the formula simplifies.
+
+```{r f-overall}
+F_overall <- (r2 / k) / ((1 - r2) / df_ur)
+F_overall
+
+sum_level$fstatistic
+```
+
+# The LM test
+
+The F test relies on normally distributed errors for its exact distribution. The Lagrange multiplier test, also called the $n R^2$ test, relies only on a large sample. It needs only the restricted model, and it follows a chi square distribution with $q$ degrees of freedom under the null.
+
+## By hand
+
+We test the same null as before, that bedrooms and colonial style can be dropped. The steps are as follows.
+
+1. Estimate the restricted model and save its residuals, $\tilde{u}$.
+2. Regress $\tilde{u}$ on all of the independent variables, including the ones excluded under the null, and save the R squared, $R^2_{\tilde{u}}$.
+3. Compute $LM = n R^2_{\tilde{u}}$ and compare it with a $\chi^2_q$ critical value.
+
+```{r lm-manual}
+hprice1$u_tilde <- resid(model_restricted)
+
+aux_lm <- lm(u_tilde ~ lotsize + sqrft + bdrms + colonial, data = hprice1)
+r2_u <- summary(aux_lm)$r.squared
+
+LM_stat <- n * r2_u
+LM_crit <- qchisq(1 - alpha, df = q)
+LM_p <- pchisq(LM_stat, df = q, lower.tail = FALSE)
+
+c(LM = LM_stat, critical_value = LM_crit, p_value = LM_p)
+```
+
+The intuition is simple. If bedrooms and colonial style truly do not belong in the model, the restricted residuals should be unrelated to them and the auxiliary R squared should be close to zero.
+
+## By command
+
+Base R has no ready command for the LM test of exclusion restrictions, so we write our own. A function is just the steps above wrapped up so that they can be reused with any pair of models.
+
+```{r lm-function}
+lm_test <- function(restricted, unrestricted) {
+  data_used <- model.frame(unrestricted)
+  data_used$u_tilde <- resid(restricted)
+  aux <- update(unrestricted, u_tilde ~ ., data = data_used)
+  q <- df.residual(restricted) - df.residual(unrestricted)
+  LM <- nobs(unrestricted) * summary(aux)$r.squared
+  c(LM = LM, df = q, p_value = pchisq(LM, df = q, lower.tail = FALSE))
+}
+
+lm_test(model_restricted, model_level)
+```
+
+A close relative is available as a command. Adding `test = "Chisq"` to `linearHypothesis()` gives the large sample chi square version of the F test, which equals $q$ times the F statistic. It is not the same number as the LM statistic, but the two are asymptotically equivalent and they will almost always lead to the same decision.
+
+```{r lm-command}
+linearHypothesis(model_level, c("bdrms = 0", "colonial = 0"), test = "Chisq")
+```
+
+The LM statistic is `r round(LM_stat, 2)` with a p value of `r round(LM_p, 3)`, against the F test p value of `r round(F_p, 3)`. The two tests agree.
+
+# Creating log variables
+
+House prices and house sizes are skewed to the right, and economists usually think about them in percentage terms. Both are good reasons to take logs. We create the new variables with `log()`, which in R is the natural log.
+
+```{r logs}
+hprice1$log_price <- log(hprice1$price)
+hprice1$log_lotsize <- log(hprice1$lotsize)
+hprice1$log_sqrft <- log(hprice1$sqrft)
+
+head(hprice1[, c("price", "log_price", "lotsize", "log_lotsize", "sqrft", "log_sqrft")])
+```
+
+We leave `bdrms` and `colonial` in levels. Bedrooms is a small count and colonial is a dummy, and the log of zero is not defined.
+
+$$\log(price) = \beta_0 + \beta_1 \log(lotsize) + \beta_2 \log(sqrft) + \beta_3 \, bdrms + \beta_4 \, colonial + u$$
+
+```{r model-log}
+model_log <- lm(log_price ~ log_lotsize + log_sqrft + bdrms + colonial, data = hprice1)
+summary(model_log)
+```
+
+You can also take logs inside the formula, as in `lm(log(price) ~ log(lotsize) + log(sqrft) + bdrms + colonial, data = hprice1)`. The estimates are identical.
+
+Putting the two models side by side in one table makes them easy to compare.
+
+```{r table-both, results='asis'}
+stargazer(model_level, model_log,
+          type = table_type,
+          header = FALSE,
+          title = "House prices in levels and in logs",
+          label = "tab:both",
+          column.labels = c("Level", "Log"),
+          dep.var.labels = c("Price", "log(Price)"),
+          digits = 4,
+          omit.stat = "ser")
+```
+
+```{r store-log}
+b_log <- coef(model_log)
+se_log <- sqrt(diag(vcov(model_log)))
+r2_log <- summary(model_log)$r.squared
+```
+
+The interpretation changes with the functional form. The coefficients on the logged regressors are elasticities. A 1 percent increase in house size raises the predicted price by about `r round(b_log["log_sqrft"], 2)` percent, and a 1 percent increase in lot size raises it by about `r round(b_log["log_lotsize"], 2)` percent, holding the other regressors constant. The coefficient on bedrooms is a semi elasticity, so one more bedroom raises the predicted price by about `r round(100 * b_log["bdrms"], 1)` percent. Do not compare the R squared of `r round(r2_log, 3)` with the `r round(r2, 3)` from the level model, since the two dependent variables are different.
+
+The log model also invites a natural test. Is the elasticity of price with respect to house size equal to one, so that a house that is 10 percent bigger sells for 10 percent more?
+
+```{r log-test}
+t_elast <- (b_log["log_sqrft"] - 1) / se_log["log_sqrft"]
+p_elast <- 2 * pt(abs(t_elast), df = df.residual(model_log), lower.tail = FALSE)
+
+c(t = unname(t_elast), p_value = unname(p_elast))
+
+linearHypothesis(model_log, "log_sqrft = 1")
+```
+
+# Graphs after a regression
+
+A table tells you what the estimates are. Graphs tell you whether to believe them. We first collect the fitted values and residuals from both models in the data frame.
+
+```{r augment}
+hprice1$fitted_level <- fitted(model_level)
+hprice1$resid_level <- resid(model_level)
+hprice1$fitted_log <- fitted(model_log)
+hprice1$resid_log <- resid(model_log)
+```
+
+## Coefficient plot
+
+A coefficient plot shows each estimate with its 95 percent confidence interval. An interval that crosses zero means the coefficient is not significant at the 5 percent level in a two tailed test. We use the log model because its coefficients are on comparable scales.
+
+```{r coef-plot, fig.height=3.5}
+coef_data <- data.frame(
+  term = names(b_log),
+  estimate = b_log,
+  lower = confint(model_log)[, 1],
+  upper = confint(model_log)[, 2]
+)
+coef_data <- coef_data[coef_data$term != "(Intercept)", ]
+
+ggplot(coef_data, aes(x = estimate, y = term)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_errorbar(aes(xmin = lower, xmax = upper), width = 0.15, orientation = "y", color = "steelblue") +
+  geom_point(size = 3, color = "steelblue") +
+  labs(
+    title = "Coefficient estimates with 95 percent confidence intervals",
+    subtitle = "Dependent variable is log(price)",
+    x = "Estimate",
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+## Actual against fitted values
+
+If the model fits well, the points gather around the 45 degree line. Systematic departures from the line point to a problem with the functional form.
+
+```{r actual-fitted, fig.height=4}
+ggplot(hprice1, aes(x = fitted_level, y = price)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  labs(
+    title = "Actual against fitted house prices",
+    subtitle = "Level model, dashed line is the 45 degree line",
+    x = "Fitted price in thousands of dollars",
+    y = "Actual price in thousands of dollars"
+  ) +
+  theme_minimal()
+```
+
+## Distribution of the residuals
+
+The exact t and F tests assume normal errors. A histogram and a normal Q-Q plot of the residuals show how reasonable that is. In the Q-Q plot, normal residuals fall along the straight line.
+
+```{r resid-hist, fig.height=4}
+resid_data <- data.frame(
+  residual = c(scale(hprice1$resid_level), scale(hprice1$resid_log)),
+  model = rep(c("Level model", "Log model"), each = n)
+)
+
+ggplot(resid_data, aes(x = residual)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 20, fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, color = "darkred", linewidth = 1) +
+  facet_wrap(~ model) +
+  labs(
+    title = "Standardized residuals against a standard normal density",
+    x = "Standardized residual",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+```{r resid-qq, fig.height=4}
+ggplot(resid_data, aes(sample = residual)) +
+  stat_qq(color = "steelblue", alpha = 0.7) +
+  stat_qq_line(color = "darkred") +
+  facet_wrap(~ model) +
+  labs(
+    title = "Normal Q-Q plots of the residuals",
+    x = "Theoretical quantiles",
+    y = "Sample quantiles"
+  ) +
+  theme_minimal()
+```
+
+The level model has a long right tail driven by a few very expensive houses. Taking logs pulls that tail in.
+
+## The built in diagnostic plots
+
+Base R produces four standard diagnostic plots from any model object with a single call to `plot()`.
+
+```{r base-plots, fig.height=6.5}
+par(mfrow = c(2, 2))
+plot(model_level)
+par(mfrow = c(1, 1))
+```
+
+# Plots to detect heteroskedasticity
+
+Homoskedasticity says that the variance of the error is the same at every value of the regressors. If that holds, a plot of the residuals against the fitted values looks like a band of roughly constant width. A funnel that opens up as the fitted values grow is the classic sign of heteroskedasticity.
+
+## Residuals against fitted values
+
+```{r het-fitted, fig.height=4}
+het_data <- data.frame(
+  fitted = c(hprice1$fitted_level, hprice1$fitted_log),
+  residual = c(hprice1$resid_level, hprice1$resid_log),
+  model = rep(c("Level model", "Log model"), each = n)
+)
+
+ggplot(het_data, aes(x = fitted, y = residual)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  facet_wrap(~ model, scales = "free") +
+  labs(
+    title = "Residuals against fitted values",
+    x = "Fitted value",
+    y = "Residual"
+  ) +
+  theme_minimal()
+```
+
+## Squared residuals against fitted values
+
+The squared residual is our estimate of the error variance for each house, so plotting it shows the variance directly. Under homoskedasticity the smooth line should be flat.
+
+```{r het-squared, fig.height=4}
+ggplot(het_data, aes(x = fitted, y = residual^2)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "loess", se = FALSE, color = "darkred") +
+  facet_wrap(~ model, scales = "free") +
+  labs(
+    title = "Squared residuals against fitted values",
+    x = "Fitted value",
+    y = "Squared residual"
+  ) +
+  theme_minimal()
+```
+
+## Residuals against each regressor
+
+Heteroskedasticity is often tied to one particular variable. Plotting the residuals against each regressor in turn helps to find the source.
+
+```{r het-regressors, fig.height=4}
+reg_data <- data.frame(
+  value = c(hprice1$sqrft, hprice1$lotsize),
+  residual = rep(hprice1$resid_level, 2),
+  regressor = rep(c("House size in square feet", "Lot size in square feet"), each = n)
+)
+
+ggplot(reg_data, aes(x = value, y = residual)) +
+  geom_point(color = "steelblue", alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  facet_wrap(~ regressor, scales = "free_x") +
+  labs(
+    title = "Level model residuals against the regressors",
+    x = NULL,
+    y = "Residual"
+  ) +
+  theme_minimal()
+```
+
+## Scale location plot
+
+The scale location plot puts the square root of the absolute standardized residual on the vertical axis. It is the third of the four base R diagnostic plots, and an upward sloping line is evidence that the spread of the residuals grows with the fitted values.
+
+```{r het-scale, fig.height=4}
+par(mfrow = c(1, 2))
+plot(model_level, which = 3, caption = "", main = "Level model")
+plot(model_log, which = 3, caption = "", main = "Log model")
+par(mfrow = c(1, 1))
+```
+
+## What the plots tell us
+
+In the level model the residuals fan out as the fitted price rises, and the squared residuals climb with it. In the log model the spread is far more even. Taking logs is often the simplest remedy for heteroskedasticity, although it is not guaranteed to work in every dataset.
+
+Plots only suggest. Formal tests for heteroskedasticity, and what to do when we find it, come with Chapter 8 in a later lab.
+
+# Summary and questions to think about
+
+We estimated a multiple regression on real data, reported it in a table, and stored the estimates in objects so that the text of the report updates itself. We tested a single coefficient with two tailed and one tailed t tests, tested two exclusion restrictions jointly with the F test and the LM test, and checked every result computed by hand against a command. We then built log variables, estimated a log model, and used graphs to judge the fit of the model, the normality of the residuals, and the presence of heteroskedasticity.
+
+Before you submit this lab, work through the following questions.
+
+1. Load the `wage1` dataset and regress `wage` on `educ`, `exper` and `tenure`. Present the results in a `stargazer` table and write a short paragraph that reports the coefficient on `educ`, its standard error and the R squared using inline R code only.
+2. In that model, test whether the return to a year of education is zero against the alternative that it is positive. Do the test by hand and confirm the p value from the summary output.
+3. Test whether `exper` and `tenure` are jointly insignificant, using the F test by hand, `anova()`, and the LM test by hand. Do the three approaches agree?
+4. Create `log_wage` and estimate the model again. How does the interpretation of the coefficient on `educ` change?
+5. Plot the residuals against the fitted values for both wage models. Which model shows stronger visual evidence of heteroskedasticity, and why might that be?
