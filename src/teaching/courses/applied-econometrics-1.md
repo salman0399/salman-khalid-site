@@ -29,5 +29,10 @@ lectures:
     files:
       - { label: "SLIDES", url: /files/eco344/ch04-slides.pdf }
       - { label: "NOTES", url: /files/eco344/ch04-notes.pdf }
+  - title: "Multiple Regression Analysis: OLS Asymptotics"
+    desc: "Wooldridge chapter 5. Consistency, asymptotic normality and large sample inference"
+    files:
+      - { label: "SLIDES", url: /files/eco344/ch05-slides.pdf }
+      - { label: "NOTES", url: /files/eco344/ch05-notes.pdf }
 labs: []
 ---
