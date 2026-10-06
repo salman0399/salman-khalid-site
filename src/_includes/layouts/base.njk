@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% set pageTitle = (title + " | " + site.shortName) if title and page.url != "/" else site.title + " | Economist" %}
+  {% set pageTitle = (title + " | " + site.shortName) if title and page.url != "/" else site.title + " (Salman Khalid) | Economist, IBA Karachi" %}
   <title>{{ pageTitle }}</title>
   <meta name="description" content="{{ summary or description or site.description }}">
   <link rel="canonical" href="{{ site.url }}{{ page.url }}">
@@ -12,7 +12,49 @@
   <meta property="og:type" content="{{ 'article' if layout == 'layouts/post.njk' else 'website' }}">
   <meta property="og:url" content="{{ site.url }}{{ page.url }}">
   <meta property="og:image" content="{{ site.url }}{{ site.photo }}">
+  <meta property="og:site_name" content="{{ site.title }}">
   <meta name="twitter:card" content="summary">
+  <meta name="author" content="{{ site.title }}">
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  {% if page.url == "/" %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "{{ site.url }}/#person",
+        "name": "{{ site.title }}",
+        "alternateName": ["Salman Khalid", "M. Salman Khalid", "Dr. Muhammad Salman Khalid"],
+        "url": "{{ site.url }}/",
+        "image": "{{ site.url }}{{ site.photo }}",
+        "jobTitle": "{{ site.role }}",
+        "description": "{{ site.description }}",
+        "worksFor": { "@type": "CollegeOrUniversity", "name": "Institute of Business Administration (IBA) Karachi", "url": "https://www.iba.edu.pk/" },
+        "alumniOf": [
+          { "@type": "CollegeOrUniversity", "name": "Claremont Graduate University" },
+          { "@type": "CollegeOrUniversity", "name": "Lahore University of Management Sciences" }
+        ],
+        "knowsAbout": {{ research.interests | dump | safe }},
+        "sameAs": ["{{ site.links.scholar | safe }}", "{{ site.links.ssrn | safe }}", "{{ site.links.linkedin }}", "{{ site.links.dissertation }}"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "{{ site.url }}/#website",
+        "url": "{{ site.url }}/",
+        "name": "{{ site.title }}",
+        "alternateName": "Salman Khalid",
+        "author": { "@id": "{{ site.url }}/#person" }
+      }
+    ]
+  }
+  </script>
+  {% endif %}
+  {% if layout == "layouts/post.njk" %}
+  <script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "BlogPosting", "headline": {{ title | dump | safe }}, "datePublished": "{{ page.date | isoDate }}", "author": { "@id": "{{ site.url }}/#person", "@type": "Person", "name": "{{ site.title }}" }, "mainEntityOfPage": "{{ site.url }}{{ page.url }}" }
+  </script>
+  {% endif %}
   <link rel="alternate" type="application/atom+xml" title="Writing feed" href="/feed.xml">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">

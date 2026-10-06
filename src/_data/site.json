@@ -2,7 +2,7 @@
   "title": "Muhammad Salman Khalid",
   "shortName": "Salman Khalid",
   "url": "https://salman-khalid.com",
-  "description": "Applied economist working on causal inference, health, crime and development. Assistant Professor of Economics at IBA Karachi.",
+  "description": "Muhammad Salman Khalid (Salman Khalid) is an applied economist at IBA Karachi working on causal inference, health, crime and development. Research, lectures, R labs and writing.",
   "role": "Assistant Professor of Economics",
   "affiliation": "School of Economics and Social Sciences, IBA Karachi",
   "email": "salman0399@outlook.com",
@@ -15,11 +15,29 @@
     "dissertation": "https://scholarship.claremont.edu/cgu_etd/782/"
   },
   "nav": [
-    { "label": "Home", "url": "/" },
-    { "label": "Research", "url": "/research/" },
-    { "label": "Teaching", "url": "/teaching/" },
-    { "label": "Writing", "url": "/blog/" },
-    { "label": "Media", "url": "/media/" },
-    { "label": "CV", "url": "/cv/" }
+    {
+      "label": "Home",
+      "url": "/"
+    },
+    {
+      "label": "Research",
+      "url": "/research/"
+    },
+    {
+      "label": "Teaching",
+      "url": "/teaching/"
+    },
+    {
+      "label": "Writing",
+      "url": "/blog/"
+    },
+    {
+      "label": "Media",
+      "url": "/media/"
+    },
+    {
+      "label": "CV",
+      "url": "/cv/"
+    }
   ]
 }
