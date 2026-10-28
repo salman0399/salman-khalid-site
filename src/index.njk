@@ -54,6 +54,7 @@ layout: layouts/base.njk
   </div>
 </section>
 
+{% if collections.posts.length %}
 <section class="section">
   <div class="wrap">
     <div class="section-head"><h2>Latest writing</h2><a class="more" href="/blog/">All posts →</a></div>
@@ -67,3 +68,4 @@ layout: layouts/base.njk
     </ul>
   </div>
 </section>
+{% endif %}
