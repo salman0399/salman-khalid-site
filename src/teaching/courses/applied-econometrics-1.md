@@ -34,6 +34,11 @@ lectures:
     files:
       - { label: "SLIDES", url: /files/eco344/ch05-slides.pdf }
       - { label: "NOTES", url: /files/eco344/ch05-notes.pdf }
+  - title: "Multiple Regression Analysis: Further Issues"
+    desc: "Wooldridge chapter 6. Data scaling, functional form, goodness of fit, prediction and residual analysis"
+    files:
+      - { label: "SLIDES", url: /files/eco344/ch06-slides.pdf }
+      - { label: "NOTES", url: /files/eco344/ch06-notes.pdf }
 labs:
   - title: "Introduction to R and RStudio"
     desc: "Setup, objects, vectors, data frames, importing CSV files and basic plots"
