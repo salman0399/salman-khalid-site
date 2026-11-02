@@ -7,8 +7,8 @@ layout: layouts/base.njk
   <thead><tr><th>#</th><th>{{ label }}</th><th style="text-align:right">Files</th></tr></thead>
   <tbody>
   {% for r in rows %}
-    <tr>
-      <td class="n">{{ loop.index }}</td>
+    <tr{% if r.chapter %} id="chapter-{{ r.chapter }}"{% endif %}>
+      <td class="n">{{ r.chapter or loop.index }}</td>
       <td>{{ r.title }}{% if r.desc %}<span class="desc">{{ r.desc }}</span>{% endif %}</td>
       <td class="files">{% for f in r.files %}{% if f.url %}<a class="file" href="{{ f.url }}" target="_blank" rel="noopener">{{ f.label }}</a>{% else %}<a class="file" href="{{ f }}" target="_blank" rel="noopener">{{ f | ext }}</a>{% endif %}{% endfor %}{% if r.link %}<a class="file" href="{{ r.link }}" rel="noopener">LINK</a>{% endif %}</td>
     </tr>
@@ -20,6 +20,31 @@ layout: layouts/base.njk
 {% endif %}
 {% endmacro %}
 
+{% if lectures and lectures.length %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Course",
+  "@id": "{{ site.url }}{{ page.url }}#course",
+  "name": {{ title | dump | safe }},
+  "url": "{{ site.url }}{{ page.url }}",
+  "description": {{ (metaDescription or summary) | dump | safe }},
+  {% if code %}"courseCode": "{{ code }}",{% endif %}
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "educationalLevel": "Undergraduate",
+  "provider": { "@type": "CollegeOrUniversity", "name": "Institute of Business Administration (IBA) Karachi", "url": "https://www.iba.edu.pk/" },
+  "instructor": { "@type": "Person", "@id": "{{ site.url }}/#person", "name": "{{ site.title }}", "url": "{{ site.url }}/" },
+  "about": ["Econometrics", "Regression analysis", "Wooldridge Introductory Econometrics slides"],
+  "isBasedOn": { "@type": "Book", "name": "Introductory Econometrics: A Modern Approach", "bookEdition": "7th", "author": { "@type": "Person", "name": "Jeffrey M. Wooldridge" } },
+  "hasPart": [
+    {%- for r in lectures %}
+    { "@type": "LearningResource", "name": {{ r.title | dump | safe }}, "description": {{ r.desc | dump | safe }}, "learningResourceType": "Presentation", "encodingFormat": "application/pdf", "isAccessibleForFree": true, "url": "{{ site.url }}{{ (r.files[0].url or r.files[0]) }}"{% if r.chapter %}, "position": {{ r.chapter }}{% endif %} }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endif %}
 <div class="wrap narrow">
   <header class="page-head">
     <div class="eyebrow"><a href="/teaching/">Teaching</a>{% if code %} · {{ code }}{% endif %}</div>
@@ -36,7 +61,7 @@ layout: layouts/base.njk
   {% if content | trim %}<div class="prose" style="margin-bottom:24px">{{ content | safe }}</div>{% endif %}
 
   <section class="section" style="padding-top:24px">
-    <h2>Lectures</h2>
+    <h2>{{ lectureHeading or "Lectures" }}</h2>
     {{ materialTable(lectures, "Topic") }}
   </section>
 

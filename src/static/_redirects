@@ -1,2 +1,14 @@
 /media /public-engagement/ 301
 /media/ /public-engagement/ 301
+/teaching/applied-econometrics-1/ /teaching/applied-econometrics/ 301
+/teaching/applied-econometrics-1 /teaching/applied-econometrics/ 301
+/teaching/applied-econometrics-2/ /teaching/applied-econometrics/ 301
+/teaching/applied-econometrics-2 /teaching/applied-econometrics/ 301
+/files/eco344/ch01-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-01-nature-of-econometrics-and-economic-data-slides.pdf 301
+/files/eco344/ch02-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-02-simple-regression-model-slides.pdf 301
+/files/eco344/ch03-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-03-multiple-regression-estimation-slides.pdf 301
+/files/eco344/ch04-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-04-multiple-regression-inference-slides.pdf 301
+/files/eco344/ch05-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-05-multiple-regression-ols-asymptotics-slides.pdf 301
+/files/eco344/ch06-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-06-multiple-regression-further-issues-slides.pdf 301
+/files/eco344/ch07-slides.pdf /files/econometrics/wooldridge-introductory-econometrics-chapter-07-multiple-regression-qualitative-information-slides.pdf 301
+/files/eco344/labs/* /files/econometrics/labs/:splat 301
