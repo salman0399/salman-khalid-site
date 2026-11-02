@@ -39,6 +39,11 @@ lectures:
     files:
       - { label: "SLIDES", url: /files/eco344/ch06-slides.pdf }
       - { label: "NOTES", url: /files/eco344/ch06-notes.pdf }
+  - title: "Multiple Regression Analysis with Qualitative Information"
+    desc: "Wooldridge chapter 7. Dummy variables, interactions, the linear probability model and program evaluation"
+    files:
+      - { label: "SLIDES", url: /files/eco344/ch07-slides.pdf }
+      - { label: "NOTES", url: /files/eco344/ch07-notes.pdf }
 labs:
   - title: "Introduction to R and RStudio"
     desc: "Setup, objects, vectors, data frames, importing CSV files and basic plots"
