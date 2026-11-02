@@ -12,38 +12,31 @@ lectures:
   - title: "The Nature of Econometrics and Economic Data"
     desc: "Wooldridge chapter 1. Causality, ceteris paribus and the structure of cross sectional, time series and panel data"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch01-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch01-notes.pdf }
+      - { label: "CHAPTER 1 SLIDES", url: /files/eco344/ch01-slides.pdf }
   - title: "The Simple Regression Model"
     desc: "Wooldridge chapter 2. OLS, fitted values, goodness of fit and units of measurement"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch02-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch02-notes.pdf }
+      - { label: "CHAPTER 2 SLIDES", url: /files/eco344/ch02-slides.pdf }
   - title: "Multiple Regression Analysis: Estimation"
     desc: "Wooldridge chapter 3. Partialling out, omitted variable bias and the Gauss Markov assumptions"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch03-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch03-notes.pdf }
+      - { label: "CHAPTER 3 SLIDES", url: /files/eco344/ch03-slides.pdf }
   - title: "Multiple Regression Analysis: Inference"
     desc: "Wooldridge chapter 4. t tests, confidence intervals and F tests"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch04-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch04-notes.pdf }
+      - { label: "CHAPTER 4 SLIDES", url: /files/eco344/ch04-slides.pdf }
   - title: "Multiple Regression Analysis: OLS Asymptotics"
     desc: "Wooldridge chapter 5. Consistency, asymptotic normality and large sample inference"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch05-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch05-notes.pdf }
+      - { label: "CHAPTER 5 SLIDES", url: /files/eco344/ch05-slides.pdf }
   - title: "Multiple Regression Analysis: Further Issues"
     desc: "Wooldridge chapter 6. Data scaling, functional form, goodness of fit, prediction and residual analysis"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch06-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch06-notes.pdf }
+      - { label: "CHAPTER 6 SLIDES", url: /files/eco344/ch06-slides.pdf }
   - title: "Multiple Regression Analysis with Qualitative Information"
     desc: "Wooldridge chapter 7. Dummy variables, interactions, the linear probability model and program evaluation"
     files:
-      - { label: "SLIDES", url: /files/eco344/ch07-slides.pdf }
-      - { label: "NOTES", url: /files/eco344/ch07-notes.pdf }
+      - { label: "CHAPTER 7 SLIDES", url: /files/eco344/ch07-slides.pdf }
 labs:
   - title: "Introduction to R and RStudio"
     desc: "Setup, objects, vectors, data frames, importing CSV files and basic plots"
