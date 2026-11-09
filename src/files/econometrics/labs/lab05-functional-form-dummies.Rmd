@@ -1,0 +1,468 @@
+---
+title: "Applied Econometrics I Lab 5 Functional Form, Dummy Variables and Binary Outcomes"
+author: "Institute of Business Administration Karachi"
+output:
+  pdf_document:
+    toc: false
+    number_sections: false
+fontsize: 11pt
+geometry: margin=2cm
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 6.2, fig.height = 3.8, fig.align = "center")
+```
+
+This lab continues the regression series from Lab 4 and follows Chapters 6 and 7 of Wooldridge. We use two datasets from the `wooldridge` package. The first is `wage1`, a cross section of 526 workers, and the second is `mroz`, a sample of 753 married women used to study labour force participation. Make sure the packages below are installed before you start.
+
+```{r packages}
+# install.packages(c("wooldridge", "ggplot2", "knitr"))
+library(wooldridge)
+library(ggplot2)
+library(knitr)
+
+data("wage1")
+data("mroz")
+
+# a small helper so every regression prints in the same tidy table
+coef_table <- function(model, digits = 4) {
+  kable(round(coef(summary(model)), digits))
+}
+
+# one colour scheme for all graphs
+red  <- "#8B1A1A"
+gray <- "grey35"
+```
+
+# Part 1 Quadratic terms
+
+## 1.1 The model
+
+Experience raises wages, but each extra year is usually worth less than the one before. A quadratic in experience lets the data show this. We estimate
+
+$$wage = \beta_0 + \beta_1\,educ + \beta_2\,exper + \beta_3\,exper^2 + u .$$
+
+We write the squared term with `I(exper^2)` inside the formula. Without `I()` R would read the caret as a formula operator and silently drop the term.
+
+```{r quad-model}
+m_quad <- lm(wage ~ educ + exper + I(exper^2), data = wage1)
+coef_table(m_quad)
+```
+
+We store the estimates in a vector so that we can use them in the text and in later calculations.
+
+```{r quad-store}
+b <- coef(m_quad)
+b_exper  <- b["exper"]
+b_expsq  <- b["I(exper^2)"]
+```
+
+Holding education fixed, the partial effect of experience is not a single number. It is $\beta_2 + 2\beta_3\,exper$, so it depends on where the worker sits on the experience scale. At zero years of experience one more year is associated with `r round(b_exper, 3)` dollars more per hour, and the effect falls by `r round(-2 * b_expsq, 4)` dollars for each additional year already accumulated. The table below evaluates the effect at four experience levels.
+
+```{r quad-me}
+exper_vals <- c(2, 10, 20, 30)
+me <- b_exper + 2 * b_expsq * exper_vals
+kable(data.frame(Experience = exper_vals,
+                 Marginal_effect = round(me, 3)),
+      col.names = c("Years of experience", "Effect of one more year ($ per hour)"))
+```
+
+## 1.2 The turning point
+
+Because the coefficient on the squared term is negative, the wage profile is an inverted U. Setting the partial effect to zero gives the experience level at which predicted wages stop rising,
+
+$$exper^{*} = \frac{-\beta_2}{2\beta_3}.$$
+
+```{r quad-turning}
+turn <- unname(-b_exper / (2 * b_expsq))
+turn
+share_beyond <- mean(wage1$exper > turn)
+share_beyond
+```
+
+The maximum is reached at about `r round(turn, 1)` years of experience. Only `r round(100 * share_beyond, 1)` percent of workers in the sample have more experience than this, so the downward sloping part of the curve is supported by real data and is not an extrapolation.
+
+## 1.3 Graph of the maximum
+
+We predict wages over a grid of experience values with education held at its sample mean, then mark the peak.
+
+```{r quad-graph}
+grid <- data.frame(exper = seq(0, 50, by = 0.5),
+                   educ  = mean(wage1$educ))
+grid$wage_hat <- predict(m_quad, newdata = grid)
+peak <- data.frame(exper = turn,
+                   wage_hat = predict(m_quad,
+                     newdata = data.frame(exper = turn, educ = mean(wage1$educ))))
+
+ggplot(grid, aes(exper, wage_hat)) +
+  geom_line(colour = red, linewidth = 1) +
+  geom_vline(xintercept = turn, linetype = "dashed", colour = gray) +
+  geom_point(data = peak, colour = red, size = 3) +
+  annotate("text", x = turn + 1, y = peak$wage_hat - 0.6,
+           label = paste0("Maximum at ", round(turn, 1), " years"),
+           hjust = 0, colour = gray) +
+  labs(x = "Years of experience", y = "Predicted hourly wage",
+       title = "Predicted wage and experience, education at its mean") +
+  theme_minimal()
+```
+
+# Part 2 Interaction between two continuous variables
+
+Sometimes the effect of one variable depends on the level of another. Suppose the return to a year of tenure with the current employer is different for workers with long labour market experience. We add the product of the two variables,
+
+$$\log(wage) = \beta_0 + \beta_1\,exper + \beta_2\,tenure + \beta_3\,exper\cdot tenure + \beta_4\,educ + u .$$
+
+In R `exper * tenure` expands to both variables and their product.
+
+```{r inter-model}
+m_int <- lm(lwage ~ exper * tenure + educ, data = wage1)
+coef_table(m_int)
+```
+
+```{r inter-store}
+bi <- coef(m_int)
+```
+
+The partial effect of tenure is now $\beta_2 + \beta_3\,exper$. The coefficient on `tenure` alone, `r round(bi["tenure"], 4)`, is the effect of tenure for a worker with zero years of experience, which is a corner of the data and not very informative. The interaction coefficient is `r round(bi["exper:tenure"], 4)`. It says that each additional year of experience lowers the return to tenure by about `r round(-100 * bi["exper:tenure"], 2)` percentage points. Workers who have been in the labour market for longer gain less from staying with the same firm.
+
+A cleaner way to report the main effects is to centre the two variables at their means. The coefficient on `tenure` then becomes the effect for the average worker.
+
+```{r inter-centered}
+wage1$exper_c  <- wage1$exper  - mean(wage1$exper)
+wage1$tenure_c <- wage1$tenure - mean(wage1$tenure)
+m_int_c <- lm(lwage ~ exper_c * tenure_c + educ, data = wage1)
+coef_table(m_int_c)
+```
+
+The interaction coefficient and its standard error are unchanged. The coefficient on `tenure_c` is now `r round(coef(m_int_c)["tenure_c"], 4)`, the effect of one more year of tenure for a worker with average experience.
+
+## Graph of the changing effect
+
+The most useful picture for an interaction is the partial effect plotted against the variable it depends on. We compute $\beta_2 + \beta_3\,exper$ and a 95 percent confidence band using the variance of the combination,
+
+$$\mathrm{Var}(\hat\beta_2 + \hat\beta_3\,exper) = \mathrm{Var}(\hat\beta_2) + exper^2\,\mathrm{Var}(\hat\beta_3) + 2\,exper\,\mathrm{Cov}(\hat\beta_2,\hat\beta_3).$$
+
+```{r inter-graph}
+V <- vcov(m_int)
+ex <- seq(0, 45, by = 0.5)
+eff <- bi["tenure"] + bi["exper:tenure"] * ex
+se  <- sqrt(V["tenure", "tenure"] +
+            ex^2 * V["exper:tenure", "exper:tenure"] +
+            2 * ex * V["tenure", "exper:tenure"])
+d <- data.frame(exper = ex,
+                effect = 100 * eff,
+                lo = 100 * (eff - 1.96 * se),
+                hi = 100 * (eff + 1.96 * se))
+
+ggplot(d, aes(exper, effect)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = red, alpha = 0.15) +
+  geom_line(colour = red, linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = gray) +
+  labs(x = "Years of experience",
+       y = "Return to one more year of tenure (percent)",
+       title = "The return to tenure falls with experience") +
+  theme_minimal()
+```
+
+Where the band lies above the dashed zero line, tenure has a statistically significant positive return at that level of experience. Read off where the band touches zero to see how much experience is needed before the return to tenure disappears.
+
+# Part 3 Dummy variables from a categorical variable
+
+## 3.1 Building the categorical variable
+
+`wage1` records region through three dummies, `northcen`, `south` and `west`. A worker who has a zero on all three lives in the East. We first collapse these into a single categorical variable, which is how region would usually arrive in a real survey.
+
+```{r region-build}
+wage1$region <- ifelse(wage1$northcen == 1, "North Central",
+                ifelse(wage1$south == 1,    "South",
+                ifelse(wage1$west == 1,     "West", "East")))
+wage1$region <- factor(wage1$region,
+                       levels = c("East", "North Central", "South", "West"))
+table(wage1$region)
+```
+
+A categorical variable with $G$ categories becomes $G-1$ dummies. We can create them by hand with a logical test.
+
+```{r dummy-by-hand}
+wage1$d_northcen <- as.numeric(wage1$region == "North Central")
+wage1$d_south    <- as.numeric(wage1$region == "South")
+wage1$d_west     <- as.numeric(wage1$region == "West")
+head(wage1[, c("region", "d_northcen", "d_south", "d_west")], 8)
+```
+
+R can also do this for us. When a factor appears in `lm()` R creates the dummies automatically and drops the first level, which becomes the base group. `model.matrix()` shows exactly what R builds.
+
+```{r model-matrix}
+head(model.matrix(~ region, data = wage1), 6)
+```
+
+## 3.2 Adding the dummies to the regression
+
+```{r dummy-reg}
+m_east <- lm(lwage ~ region + educ + exper + tenure, data = wage1)
+coef_table(m_east)
+```
+
+East is the omitted category, so each region coefficient is a difference from East, holding education, experience and tenure fixed. For example, a worker in the South earns about `r round(100 * abs(coef(m_east)["regionSouth"]), 1)` percent `r ifelse(coef(m_east)["regionSouth"] < 0, "less", "more")` than an otherwise identical worker in the East, and the difference is `r ifelse(abs(summary(m_east)$coef["regionSouth", "t value"]) > 1.96, "", "not ")`statistically significant at the 5 percent level. The intercept is the predicted log wage of an East worker with zero education, experience and tenure.
+
+Including all four dummies together with the intercept breaks the assumption of no perfect collinearity, because the four dummies add up to the constant. R detects this and drops one coefficient, which it reports as `NA`. This is the dummy variable trap.
+
+```{r trap}
+wage1$d_east <- as.numeric(wage1$region == "East")
+m_trap <- lm(lwage ~ d_east + d_northcen + d_south + d_west + educ + exper + tenure,
+             data = wage1)
+coef(m_trap)
+```
+
+## 3.3 Changing the base group
+
+Nothing forces us to drop East. We can make South the base group with `relevel()` and estimate again.
+
+```{r dummy-relevel}
+wage1$region_s <- relevel(wage1$region, ref = "South")
+m_south <- lm(lwage ~ region_s + educ + exper + tenure, data = wage1)
+coef_table(m_south)
+```
+
+The region coefficients are now differences from the South, so every one of them has changed. The next chunk shows what has not changed.
+
+```{r compare}
+comparison <- data.frame(
+  Statistic = c("R squared", "SSR", "Coefficient on educ",
+                "Coefficient on exper", "Coefficient on tenure"),
+  Base_East = c(summary(m_east)$r.squared, sum(resid(m_east)^2),
+                coef(m_east)[c("educ", "exper", "tenure")]),
+  Base_South = c(summary(m_south)$r.squared, sum(resid(m_south)^2),
+                 coef(m_south)[c("educ", "exper", "tenure")]))
+kable(comparison, digits = 4, row.names = FALSE)
+
+all.equal(unname(fitted(m_east)), unname(fitted(m_south)))
+```
+
+The two models are the same model written in two ways. The R squared, the SSR, the slopes on the other regressors and every fitted value are identical. Only the region coefficients and the intercept move, because they are measured against a different reference point.
+
+The two sets of region coefficients also carry the same information. Any pairwise difference between regions can be recovered from either regression. For example the West minus South gap computed from the East based model equals the West coefficient in the South based model.
+
+```{r recover}
+west_minus_south_from_east <- coef(m_east)["regionWest"] - coef(m_east)["regionSouth"]
+west_minus_south_direct    <- coef(m_south)["region_sWest"]
+c(from_east_model = unname(west_minus_south_from_east),
+  from_south_model = unname(west_minus_south_direct))
+```
+
+The standard error does change with the base group, since it belongs to a different linear combination of the coefficients. This is why we choose the base group that makes the comparison we care about the one we can read straight from the table.
+
+# Part 4 Interaction between two dummy variables
+
+Two dummies create four groups. With `female` and `married` the groups are single men, married men, single women and married women. We include each dummy and their product,
+
+$$\log(wage) = \beta_0 + \beta_1\,female + \beta_2\,married + \beta_3\,female\cdot married + \beta_4\,educ + \beta_5\,exper + \beta_6\,tenure + u .$$
+
+```{r dd-model}
+m_dd <- lm(lwage ~ female * married + educ + exper + tenure, data = wage1)
+coef_table(m_dd)
+bd <- coef(m_dd)
+```
+
+Single men are the base group. The coefficient on `female` is the gap between single women and single men, `married` is the gap between married men and single men, and the interaction term says how much the marriage premium differs for women. The next table turns the coefficients into the four group differences from single men, holding the other regressors fixed.
+
+```{r dd-groups}
+groups <- data.frame(
+  Group = c("Single men", "Married men", "Single women", "Married women"),
+  Female = c(0, 0, 1, 1),
+  Married = c(0, 1, 0, 1))
+groups$Difference_from_single_men <- with(groups,
+  bd["female"] * Female + bd["married"] * Married +
+  bd["female:married"] * Female * Married)
+kable(groups, digits = 3)
+```
+
+The marriage premium for men is about `r round(100 * bd["married"], 1)` percent. For women it is `r round(100 * (bd["married"] + bd["female:married"]), 1)` percent, which is the sum of the `married` and `female:married` coefficients. A hypothesis test on that sum needs its own standard error, a point that comes up again in the exercises.
+
+The interaction model is the same as a model with one four level categorical variable. We can prove this by building the group variable and comparing the fit.
+
+```{r dd-factor}
+wage1$group <- factor(with(wage1, ifelse(female == 0 & married == 0, "Single men",
+                                  ifelse(female == 0 & married == 1, "Married men",
+                                  ifelse(female == 1 & married == 0, "Single women",
+                                                                     "Married women")))),
+                      levels = c("Single men", "Married men",
+                                 "Single women", "Married women"))
+m_group <- lm(lwage ~ group + educ + exper + tenure, data = wage1)
+coef_table(m_group)
+c(R2_interaction = summary(m_dd)$r.squared, R2_group = summary(m_group)$r.squared)
+```
+
+The coefficients on the three group dummies are exactly the three group differences in the table above, and the R squared is identical. The interaction term is simply the device that lets the four groups have four different intercepts.
+
+# Part 5 Interaction between a dummy and a continuous variable
+
+An interaction between a dummy and a continuous variable lets the groups differ in both the intercept and the slope. We let the return to experience differ by sex,
+
+$$\log(wage) = \beta_0 + \beta_1\,female + \beta_2\,exper + \beta_3\,female\cdot exper + \beta_4\,educ + \beta_5\,tenure + u .$$
+
+```{r dc-model}
+m_dc <- lm(lwage ~ female * exper + educ + tenure, data = wage1)
+coef_table(m_dc)
+bc <- coef(m_dc)
+```
+
+For men the intercept is `r round(bc["(Intercept)"], 3)` and the slope on experience is `r round(bc["exper"], 4)`. For women the intercept shifts by `r round(bc["female"], 3)` and the slope shifts by `r round(bc["female:exper"], 4)`, so the slope for women is `r round(bc["exper"] + bc["female:exper"], 4)`. The coefficient on `female` is the wage gap at zero years of experience. The interaction says that each extra year of experience widens the gap by about `r round(-100 * bc["female:exper"], 2)` percentage points. Women start lower and also gain less from experience in this sample.
+
+## Graph of the intercept change and the slope change
+
+We draw the fitted line for each group, holding education and tenure at their sample means.
+
+```{r dc-graph}
+grid2 <- expand.grid(exper  = seq(0, 50, by = 1),
+                     female = c(0, 1))
+grid2$educ   <- mean(wage1$educ)
+grid2$tenure <- mean(wage1$tenure)
+grid2$lwage_hat <- predict(m_dc, newdata = grid2)
+grid2$Group <- factor(ifelse(grid2$female == 1, "Women", "Men"))
+
+ggplot(grid2, aes(exper, lwage_hat, colour = Group)) +
+  geom_line(linewidth = 1) +
+  scale_colour_manual(values = c(Men = gray, Women = red)) +
+  annotate("segment", x = 0, xend = 0,
+           y = bc["(Intercept)"] + bc["educ"] * mean(wage1$educ) +
+               bc["tenure"] * mean(wage1$tenure),
+           yend = bc["(Intercept)"] + bc["female"] + bc["educ"] * mean(wage1$educ) +
+                  bc["tenure"] * mean(wage1$tenure),
+           colour = "black", arrow = arrow(length = unit(0.12, "cm"), ends = "both")) +
+  annotate("text", x = 1.5, y = predict(m_dc, newdata = data.frame(
+             exper = 0, female = 0.5, educ = mean(wage1$educ),
+             tenure = mean(wage1$tenure))),
+           label = "Intercept change", hjust = 0, size = 3.3) +
+  labs(x = "Years of experience", y = "Predicted log wage",
+       title = "Different intercepts and different slopes for men and women") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+The vertical gap at zero experience is the intercept change, $\beta_1$. The widening distance between the two lines as experience grows is the slope change, $\beta_3$. If $\beta_3$ were zero the lines would be parallel and the gap would stay equal to $\beta_1$ at every level of experience.
+
+# Part 6 The Chow test
+
+Part 5 let the intercept and the slope on experience differ by sex. The Chow test asks the broader question of whether the whole regression function is the same for two groups. We use the wage equation
+
+$$\log(wage) = \beta_0 + \beta_1\,educ + \beta_2\,exper + \beta_3\,tenure + u ,$$
+
+and test whether men and women share the same $\beta_0$ through $\beta_3$. The null hypothesis is that all $k+1 = 4$ coefficients are equal across the two groups, so there are 4 restrictions.
+
+## 6.1 The test from the sum of squared residuals
+
+We estimate the model on the pooled sample and then separately for each group. The restricted model is the pooled one, since it forces the coefficients to be equal. The unrestricted model is the pair of separate regressions, whose combined SSR is the sum of the two group SSRs.
+
+```{r chow-ssr}
+m_pool  <- lm(lwage ~ educ + exper + tenure, data = wage1)
+m_men   <- lm(lwage ~ educ + exper + tenure, data = subset(wage1, female == 0))
+m_women <- lm(lwage ~ educ + exper + tenure, data = subset(wage1, female == 1))
+
+ssr_p <- sum(resid(m_pool)^2)
+ssr_1 <- sum(resid(m_men)^2)
+ssr_2 <- sum(resid(m_women)^2)
+ssr_ur <- ssr_1 + ssr_2
+
+n <- nrow(wage1)
+k <- 3
+q <- k + 1
+df2 <- n - 2 * (k + 1)
+
+F_chow <- ((ssr_p - ssr_ur) / q) / (ssr_ur / df2)
+crit   <- qf(0.95, q, df2)
+pval   <- pf(F_chow, q, df2, lower.tail = FALSE)
+c(F = F_chow, critical_5pct = crit, p_value = pval)
+```
+
+The statistic is
+
+$$F = \frac{[SSR_P - (SSR_1 + SSR_2)]/(k+1)}{(SSR_1 + SSR_2)/[n - 2(k+1)]},$$
+
+with `r q` and `r df2` degrees of freedom. We get $F =$ `r round(F_chow, 2)` against a 5 percent critical value of `r round(crit, 2)`, so we `r ifelse(F_chow > crit, "reject", "fail to reject")` the null that men and women share one wage equation. The separate regressions show where the groups differ.
+
+```{r chow-separate}
+kable(round(cbind(Men = coef(m_men), Women = coef(m_women)), 4))
+```
+
+## 6.2 The test with interactions
+
+The same test can be run with one regression. We interact every regressor with the female dummy and test that the dummy and all its interactions are jointly zero. The unrestricted model below fits exactly the same lines as the two separate regressions.
+
+```{r chow-interact}
+m_ur <- lm(lwage ~ female * (educ + exper + tenure), data = wage1)
+coef_table(m_ur)
+```
+
+```{r chow-anova}
+anova(m_pool, m_ur)
+```
+
+The F statistic in the `anova()` table equals the one computed by hand, and the SSR of the unrestricted model equals `ssr_ur` from the separate regressions. The interaction form has one advantage. Its individual t statistics show which coefficients differ, while the Chow statistic only tells us whether any of them do. It also lets us test a subset, for example whether the slopes differ once the intercepts are allowed to differ. The restricted model keeps the female dummy but drops its three interactions.
+
+```{r chow-slopes}
+m_dummy_only <- lm(lwage ~ educ + exper + tenure + female, data = wage1)
+anova(m_dummy_only, m_ur)
+```
+
+The second test asks whether the three slopes are equal across groups while allowing the intercepts to differ. Compare its conclusion with the full Chow test. The classic Chow test also assumes that the error variance is the same in the two groups. When that is doubtful, the interaction form is preferred and the test should be made robust, which we come back to with Chapter 8.
+
+# Part 7 A binary dependent variable
+
+So far the dependent variable has been continuous. When it is a dummy, the regression is called a linear probability model. We use the `mroz` data, where `inlf` equals one if a married woman was in the labour force in 1975 and zero otherwise.
+
+```{r lpm-data}
+table(mroz$inlf)
+mean(mroz$inlf)
+```
+
+```{r lpm-model}
+m_lpm <- lm(inlf ~ nwifeinc + educ + exper + I(exper^2) + age + kidslt6 + kidsge6,
+            data = mroz)
+coef_table(m_lpm)
+bl <- coef(m_lpm)
+```
+
+With a binary outcome, $\mathrm{E}(y\mid x) = P(y = 1\mid x)$, so each slope is the change in the probability of the outcome for a one unit change in the regressor, holding the others fixed. We multiply by 100 to speak in percentage points.
+
+- One more year of education raises the probability of working by about `r round(100 * bl["educ"], 1)` percentage points.
+- One more child under six lowers the probability by about `r round(-100 * bl["kidslt6"], 1)` percentage points, while the number of older children has no statistically significant effect.
+- One more year of age lowers the probability by about `r round(-100 * bl["age"], 1)` percentage points.
+- Each extra 1,000 dollars of other family income lowers the probability by about `r round(-100 * bl["nwifeinc"], 2)` percentage points.
+- Experience enters as a quadratic, so its effect changes with the level. The probability peaks at about `r round(-bl["exper"] / (2 * bl["I(exper^2)"]), 1)` years of experience.
+
+The intercept is the predicted probability of working for a woman who is zero on every regressor, which is outside the range of the data and has no useful meaning here.
+
+## Predicted probabilities and the limits of the model
+
+We can predict the probability for a particular woman. Take a 35 year old woman with 12 years of education, 10 years of experience, no young children, two older children and 20 thousand dollars of other family income.
+
+```{r lpm-predict}
+new <- data.frame(nwifeinc = 20, educ = 12, exper = 10, age = 35,
+                  kidslt6 = 0, kidsge6 = 2)
+predict(m_lpm, newdata = new)
+```
+
+The model predicts a probability of about `r round(predict(m_lpm, newdata = new), 2)`. A weakness of the linear probability model is that nothing keeps the fitted values between zero and one.
+
+```{r lpm-range}
+p_hat <- fitted(m_lpm)
+c(below_zero = sum(p_hat < 0), above_one = sum(p_hat > 1), n = length(p_hat))
+
+ggplot(data.frame(p_hat), aes(p_hat)) +
+  geom_histogram(bins = 30, fill = red, colour = "white") +
+  geom_vline(xintercept = c(0, 1), linetype = "dashed", colour = gray) +
+  labs(x = "Fitted probability of being in the labour force", y = "Count",
+       title = "Fitted values from the linear probability model") +
+  theme_minimal()
+```
+
+`r sum(p_hat < 0)` observations have a negative fitted probability and `r sum(p_hat > 1)` exceed one, out of `r length(p_hat)`. This is a small share, and for most applied questions the linear probability model still gives sensible average effects. The error variance of a binary outcome also depends on the regressors by construction, so the usual standard errors need care. We return to this when we study heteroskedasticity in Chapter 8.
+
+# Exercises
+
+1. Re estimate the wage model of Part 1 with $\log(wage)$ as the dependent variable. Find the turning point and compare it with the one from the level model. Which is easier to interpret and why.
+2. In Part 4 test whether the marriage premium for women is zero. Reparameterise the model so that the premium for women appears as a single coefficient with its own standard error, as we did in class for testing the equality of two coefficients.
+3. In Part 5 add a quadratic in experience and allow it to differ by sex. Plot the two fitted curves and report where each peaks.
+4. In Part 7 add `huswage` and `educ` squared to the linear probability model. Does the effect of education still look the same at 8 and at 16 years.

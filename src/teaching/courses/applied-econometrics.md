@@ -61,4 +61,7 @@ labs:
   - title: "Multiple Regression and Inference with Real Data"
     desc: "Estimation, regression tables, t, F and LM tests, logs and diagnostic plots"
     files: [/files/econometrics/labs/lab04-multiple-regression.pdf, /files/econometrics/labs/lab04-multiple-regression.Rmd]
+  - title: "Functional Form, Dummy Variables and Binary Outcomes"
+    desc: "Quadratics, interactions, dummy variables, the Chow test and the linear probability model"
+    files: [/files/econometrics/labs/lab05-functional-form-dummies.pdf, /files/econometrics/labs/lab05-functional-form-dummies.Rmd]
 ---
