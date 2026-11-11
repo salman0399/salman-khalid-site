@@ -7,7 +7,7 @@ eleventyExcludeFromCollections: true
 > Personal academic site of Dr. Muhammad Salman Khalid (Salman Khalid), applied economist at IBA Karachi. Research in causal inference, health, crime and development, free teaching materials, and public commentary.
 
 ## Teaching materials
-- [Wooldridge Introductory Econometrics slides, chapters 1 to 7]({{ site.url }}/teaching/applied-econometrics/): free PDF lecture slides following Jeffrey Wooldridge, Introductory Econometrics, A Modern Approach (7th edition), chapter by chapter, plus R labs with R Markdown code.
+- [Wooldridge Introductory Econometrics slides, chapters 1 to 8]({{ site.url }}/teaching/applied-econometrics/): free PDF lecture slides following Jeffrey Wooldridge, Introductory Econometrics, A Modern Approach (7th edition), chapter by chapter, plus R labs with R Markdown code.
 {%- for c in collections.courses %}{% for r in c.data.lectures %}
 - [{{ r.title }}]({{ site.url }}{{ r.files[0].url or r.files[0] }}): {{ r.desc }}
 {%- endfor %}{% endfor %}

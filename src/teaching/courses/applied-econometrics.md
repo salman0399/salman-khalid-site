@@ -1,6 +1,6 @@
 ---
 title: Applied Econometrics
-seoTitle: "Wooldridge Introductory Econometrics Slides, Chapters 1 to 7, Free PDF Lecture Slides and R Labs"
+seoTitle: "Wooldridge Introductory Econometrics Slides, Chapters 1 to 8, Free PDF Lecture Slides and R Labs"
 metaDescription: "Free lecture slides for Wooldridge's Introductory Econometrics, A Modern Approach (7th edition), chapter by chapter in PDF, plus R labs with code. Applied Econometrics course by Dr. Salman Khalid, IBA Karachi."
 keywords: "Wooldridge slides, Wooldridge Introductory Econometrics slides, Introductory Econometrics A Modern Approach lecture slides, econometrics lecture slides PDF, Wooldridge chapter slides, econometrics R labs"
 code: ECO 344
@@ -48,6 +48,11 @@ lectures:
     desc: "Dummy variables, interactions, the linear probability model and program evaluation"
     files:
       - { label: "CHAPTER 7 SLIDES", url: /files/econometrics/wooldridge-introductory-econometrics-chapter-07-multiple-regression-qualitative-information-slides.pdf }
+  - title: "Wooldridge Chapter 8, Heteroskedasticity"
+    chapter: 8
+    desc: "Heteroskedasticity robust inference, Breusch Pagan and White tests, weighted least squares and the linear probability model revisited"
+    files:
+      - { label: "CHAPTER 8 SLIDES", url: /files/econometrics/wooldridge-introductory-econometrics-chapter-08-heteroskedasticity-slides.pdf }
 labs:
   - title: "Introduction to R and RStudio"
     desc: "Setup, objects, vectors, data frames, importing CSV files and basic plots"
