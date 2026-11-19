@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% set pageTitle = (title + " | " + site.shortName) if title and page.url != "/" else site.title + " (Salman Khalid) | Economist, IBA Karachi" %}
+  {% set pageTitle = (title + " | " + site.shortName) if title and page.url != "/" else site.title + " (Salman Khalid) | Economist, Aga Khan University" %}
   {% if seoTitle %}{% set pageTitle = seoTitle + " | " + site.shortName %}{% endif %}
   <title>{{ pageTitle }}</title>
   <meta name="description" content="{{ metaDescription or summary or description or site.description }}">
@@ -32,7 +32,7 @@
         "image": "{{ site.url }}{{ site.photo }}",
         "jobTitle": "{{ site.role }}",
         "description": "{{ site.description }}",
-        "worksFor": { "@type": "CollegeOrUniversity", "name": "Institute of Business Administration (IBA) Karachi", "url": "https://www.iba.edu.pk/" },
+        "worksFor": { "@type": "CollegeOrUniversity", "name": "Aga Khan University, Faculty of Arts and Sciences", "url": "https://www.aku.edu/faspk/" },
         "alumniOf": [
           { "@type": "CollegeOrUniversity", "name": "Claremont Graduate University" },
           { "@type": "CollegeOrUniversity", "name": "Lahore University of Management Sciences" }
