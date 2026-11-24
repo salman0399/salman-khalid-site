@@ -1,0 +1,426 @@
+---
+title: "Applied Econometrics I, Lab 6"
+subtitle: "Merging and Appending Data, and Heteroskedasticity (Chapter 8)"
+author: "Muhammad Salman Khalid"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+header-includes:
+  - \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, comment = "")
+```
+
+# Packages for This Lab
+
+We need `dplyr` for joining data, `wooldridge` for the MROZ data, `lmtest` and `sandwich` for heteroskedasticity tests and robust standard errors, and `stargazer` for the final regression table. Install any package you do not have with `install.packages()` before running the chunk below.
+
+```{r packages}
+library(dplyr)
+library(wooldridge)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+```
+
+# Part 1. Combining Data Sets
+
+Real research rarely comes in one clean file. Household data sit in one file, district data in another, and every survey round arrives as its own file. Before we can run a regression we have to put these pieces together. There are two ways of doing that.
+
+A **merge** (also called a join) adds new *columns*. We line up two data sets side by side using a variable they share, and every row picks up the extra information from the other file.
+
+An **append** adds new *rows*. We stack two data sets with the same variables on top of each other, for example the 2024 and 2025 rounds of the same survey.
+
+## Primary Keys
+
+A merge only works if R knows which row in one file belongs with which row in the other. The variable that does this matching is the **key**. A **primary key** is a variable (or a set of variables) that uniquely identifies every row in a data set. No two rows share the same value, and no value is missing. A CNIC number is a primary key for Pakistani adults, and a student ID is a primary key in the IBA student records.
+
+Whenever you merge, the first thing to ask is whether the key is unique in each file. The answer tells you what kind of merge you are doing.
+
+## Loading the Data Sets
+
+This lab comes with six small CSV files, `students.csv`, `scores.csv`, `cities.csv`, `households.csv`, `survey_2024.csv` and `survey_2025.csv`. They are kept small on purpose so you can see exactly what happens to every row. Save them in the same folder as this .Rmd file, or set your working directory to the folder that holds them with `setwd()`.
+
+The first file holds basic information on students. The primary key is `student_id`.
+
+```{r students}
+students <- read.csv("students.csv")
+students
+```
+
+The second file holds exam scores from the registrar. Its key is also `student_id`. Notice that student 105 has no scores yet and student 106 has scores but is missing from the first file. This mismatch is very common in practice.
+
+```{r scores}
+scores <- read.csv("scores.csv")
+scores
+```
+
+Before merging, we confirm that `student_id` really is a primary key in both files. If the number of unique IDs equals the number of rows, the key is unique.
+
+```{r check-keys}
+n_distinct(students$student_id) == nrow(students)
+n_distinct(scores$student_id) == nrow(scores)
+
+# Another way. List any ID that appears more than once
+students %>% count(student_id) %>% filter(n > 1)
+```
+
+Both checks pass, so each student appears once in each file.
+
+## The 1:1 Merge
+
+In a **one to one (1:1) merge** the key is unique in *both* data sets. Each student in the first file matches at most one row in the second file. The merged data have one row per student and simply gain the score columns.
+
+The only real decision is what to do with rows that do not find a partner. There are four types of join, and they differ only in which unmatched rows they keep.
+
+| Join | Rows kept |
+|:--|:--|
+| `inner_join()` | Only IDs found in both files |
+| `left_join()` | Every row of the first (left) file |
+| `right_join()` | Every row of the second (right) file |
+| `full_join()` | Every row of both files |
+
+```{r one-to-one}
+inner_join(students, scores, by = "student_id")
+left_join(students, scores, by = "student_id")
+full_join(students, scores, by = "student_id")
+```
+
+The inner join drops both 105 and 106. The left join keeps Zainab (105) with `NA` scores because she is in the left file. The full join keeps everyone and fills the gaps with `NA`.
+
+You can tell `dplyr` what relationship you expect, and it will stop with an error if the data disagree. This is a good habit because it catches mistakes in the key before they reach your regression.
+
+```{r one-to-one-check}
+merged_11 <- left_join(students, scores, by = "student_id",
+                       relationship = "one-to-one")
+merged_11
+```
+
+Base R does the same thing with `merge()`. The argument `all.x = TRUE` gives a left join, `all = TRUE` gives a full join, and the default is an inner join.
+
+```{r base-merge}
+merge(students, scores, by = "student_id", all.x = TRUE)
+```
+
+To see why checking the key matters, suppose the registrar file accidentally records student 102 twice. A 1:1 merge should now fail, and it does.
+
+```{r duplicate-key, error=TRUE}
+scores_bad <- rbind(scores, data.frame(student_id = 102, midterm = 66, final = 71))
+
+left_join(students, scores_bad, by = "student_id",
+          relationship = "one-to-one")
+```
+
+Without the `relationship` argument R would quietly give Bilal two rows, and any regression on the merged data would count him twice.
+
+## The 1:m Merge
+
+In a **one to many (1:m) merge** the key is unique in one file but repeats in the other. The classic example is attaching area level information to individual level data. Each city appears once in a city file, but many households live in the same city.
+
+The city file has one row per city, so `city_id` is its primary key.
+
+```{r cities}
+cities <- read.csv("cities.csv")
+cities
+```
+
+The household file has one row per household. Its primary key is `hh_id`, while `city_id` repeats because several households share a city. Here `city_id` is called a **foreign key**, since it points to the primary key of another file.
+
+```{r households}
+households <- read.csv("households.csv")
+households
+
+# hh_id is unique, city_id is not
+n_distinct(households$hh_id) == nrow(households)
+households %>% count(city_id)
+```
+
+When we merge, every household picks up the rent and province of its city. The city information is copied onto each matching household.
+
+```{r one-to-many}
+merged_1m <- left_join(cities, households, by = "city_id",
+                       relationship = "one-to-many")
+merged_1m
+```
+
+The merged data now have eight rows, one per household. Karachi's average rent appears three times because three households live in Karachi.
+
+If you put the household file on the left, the same merge is called **many to one (m:1)**. The result has the same rows, only the column order changes. In applied work this direction is more natural, because the household file is the one we analyse and we are adding context to it.
+
+```{r many-to-one}
+merged_m1 <- left_join(households, cities, by = "city_id",
+                       relationship = "many-to-one")
+merged_m1
+```
+
+Now that the data are combined we can create variables that need both files, such as the share of income spent on rent.
+
+```{r rent-share}
+merged_m1 %>%
+  mutate(rent_share = avg_rent / hh_income) %>%
+  select(hh_id, city, hh_income, avg_rent, rent_share)
+```
+
+A word of caution. If the key repeats in *both* files you have a **many to many** merge, and R pairs every matching row with every other matching row. This almost always signals a mistake in the key, which is another reason to check uniqueness before merging.
+
+## Appending Data
+
+An **append** stacks data sets that share the same variables. Suppose the household survey was run in 2024 and again in 2025, and each round was saved as its own file.
+
+```{r survey-rounds}
+survey_2024 <- read.csv("survey_2024.csv")
+survey_2025 <- read.csv("survey_2025.csv")
+
+survey_2024
+survey_2025
+```
+
+Before stacking we add a variable that records the survey year. Without it we could not tell the rounds apart after appending, and household 1 would appear twice with no way of knowing which row is which.
+
+```{r add-year}
+survey_2024$year <- 2024
+survey_2025$year <- 2025
+```
+
+Base R appends with `rbind()`, which requires identical column names in both files. `dplyr` uses `bind_rows()`.
+
+```{r append}
+panel <- bind_rows(survey_2024, survey_2025)
+panel
+```
+
+Notice that `hh_id` alone is no longer a primary key, since household 1 appears in both years. In the appended data the primary key is the *pair* `hh_id` and `year`. Data with this structure, the same units observed over several periods, is called **panel data**.
+
+```{r panel-key}
+panel %>% count(hh_id, year) %>% filter(n > 1)
+```
+
+The empty result confirms that `hh_id` and `year` together identify each row.
+
+A useful difference between the two functions shows up when the files do not have the same columns. Suppose the 2025 round added a question on remittances.
+
+```{r append-mismatch, error=TRUE}
+survey_2025$remit <- c(0, 15000, 0, 30000)
+
+rbind(survey_2024, survey_2025)     # fails, columns differ
+bind_rows(survey_2024, survey_2025) # works, fills 2024 with NA
+```
+
+`rbind()` refuses, while `bind_rows()` keeps the new variable and fills it with `NA` for 2024, the year it was not asked.
+
+To sum up, a merge makes the data **wider** by adding columns, and an append makes the data **longer** by adding rows.
+
+# Part 2. Heteroskedasticity (Chapter 8)
+
+## The Data and the Model
+
+We use the MROZ data on 753 married women from the 1975 Panel Study of Income Dynamics. The dependent variable `inlf` equals 1 if the woman was in the labour force in 1975 and 0 otherwise. Since the outcome is binary, an OLS regression of `inlf` on the regressors is a **linear probability model (LPM)**, and each coefficient measures the change in the probability of working.
+
+We model labour force participation as a function of other household income (`nwifeinc`, in thousands of dollars), years of education, experience and its square, age, and the number of young (`kidslt6`) and older (`kidsge6`) children.
+
+```{r lpm}
+data("mroz")
+
+lpm <- lm(inlf ~ nwifeinc + educ + exper + I(exper^2) + age +
+            kidslt6 + kidsge6, data = mroz)
+summary(lpm)
+```
+
+An extra year of education raises the probability of being in the labour force by about `r round(100*coef(lpm)["educ"], 1)` percentage points, holding the other factors fixed. Each child under six lowers it by about `r round(-100*coef(lpm)["kidslt6"], 1)` percentage points.
+
+## Why the LPM Is Heteroskedastic
+
+The LPM has heteroskedasticity built into it. Because `inlf` is a 0/1 variable, its conditional variance is
+
+$$\text{Var}(y \mid \mathbf{x}) = p(\mathbf{x})\,[1 - p(\mathbf{x})],$$
+
+where $p(\mathbf{x})$ is the probability of working. Since this probability changes with education, children and the rest, the error variance changes too. Assumption MLR.5 cannot hold unless none of the regressors matter. The OLS coefficients remain unbiased, but the usual standard errors, t statistics and F statistics are no longer valid. Formal tests let us confirm what theory tells us, and the same tools work for any model.
+
+## Breusch Pagan Test, Done Manually
+
+The Breusch Pagan (BP) test asks whether the squared residuals are related to the regressors. The null hypothesis is homoskedasticity,
+
+$$H_0\!: \text{Var}(u \mid x_1, \dots, x_k) = \sigma^2.$$
+
+The test takes three steps.
+
+1. Estimate the model by OLS and save the residuals $\hat{u}$.
+2. Regress $\hat{u}^2$ on all the regressors and keep the $R^2$ of this auxiliary regression, call it $R^2_{\hat{u}^2}$.
+3. Compute either the F statistic for joint significance of the regressors in step 2, or the LM statistic $LM = n \cdot R^2_{\hat{u}^2}$, which follows a $\chi^2_k$ distribution under the null.
+
+```{r bp-manual}
+mroz$uhat_sq <- resid(lpm)^2
+
+bp_aux <- lm(uhat_sq ~ nwifeinc + educ + exper + I(exper^2) + age +
+               kidslt6 + kidsge6, data = mroz)
+
+n  <- nobs(lpm)
+k  <- length(coef(bp_aux)) - 1
+R2 <- summary(bp_aux)$r.squared
+
+# F version
+bp_F   <- (R2 / k) / ((1 - R2) / (n - k - 1))
+bp_F_p <- pf(bp_F, k, n - k - 1, lower.tail = FALSE)
+
+# LM version
+bp_LM   <- n * R2
+bp_LM_p <- pchisq(bp_LM, df = k, lower.tail = FALSE)
+
+c(R2 = R2, F = bp_F, F_pvalue = bp_F_p, LM = bp_LM, LM_pvalue = bp_LM_p)
+```
+
+The F statistic matches the one printed at the bottom of the auxiliary regression output.
+
+```{r bp-aux-F}
+summary(bp_aux)$fstatistic
+```
+
+The LM statistic is `r round(bp_LM, 2)` with `r k` degrees of freedom and a p value of `r format.pval(bp_LM_p, digits = 3)`. We reject homoskedasticity at any conventional level, which is exactly what the theory of the LPM predicts.
+
+## White Test, Done Manually
+
+The BP test only looks for a *linear* relation between $\hat{u}^2$ and the regressors. The White test also allows for squares and cross products of the regressors. With seven regressors the full version needs 35 terms, which uses up many degrees of freedom. Wooldridge (Section 8.3) recommends a special form that captures the same idea in just two terms, the fitted values $\hat{y}$ and their square $\hat{y}^2$. Since $\hat{y}$ is a linear function of all the regressors, $\hat{y}^2$ contains all their squares and cross products.
+
+1. Estimate the model by OLS and save $\hat{u}$ and $\hat{y}$.
+2. Regress $\hat{u}^2$ on $\hat{y}$ and $\hat{y}^2$ and keep the $R^2$.
+3. Compute $LM = n \cdot R^2$, which follows a $\chi^2_2$ distribution, or the F statistic with 2 and $n - 3$ degrees of freedom.
+
+```{r white-manual}
+mroz$yhat <- fitted(lpm)
+
+white_aux <- lm(uhat_sq ~ yhat + I(yhat^2), data = mroz)
+R2_w <- summary(white_aux)$r.squared
+
+white_F   <- (R2_w / 2) / ((1 - R2_w) / (n - 3))
+white_F_p <- pf(white_F, 2, n - 3, lower.tail = FALSE)
+
+white_LM   <- n * R2_w
+white_LM_p <- pchisq(white_LM, df = 2, lower.tail = FALSE)
+
+c(R2 = R2_w, F = white_F, F_pvalue = white_F_p,
+  LM = white_LM, LM_pvalue = white_LM_p)
+```
+
+The White LM statistic is `r round(white_LM, 2)` with a p value of `r format.pval(white_LM_p, digits = 3)`, so the White test also rejects homoskedasticity.
+
+## Both Tests Using Commands
+
+The `bptest()` function in the `lmtest` package runs these tests in one line. By default it regresses $\hat{u}^2$ on the regressors of the model and reports the LM statistic, so it reproduces our manual BP test.
+
+```{r bp-command}
+bptest(lpm)
+```
+
+For the special White test we give `bptest()` a second formula listing $\hat{y}$ and $\hat{y}^2$ as the variables in the auxiliary regression.
+
+```{r white-command}
+bptest(lpm, ~ yhat + I(yhat^2), data = mroz)
+```
+
+Let us put the manual and command results side by side.
+
+```{r compare-tests}
+bp_cmd    <- bptest(lpm)
+white_cmd <- bptest(lpm, ~ yhat + I(yhat^2), data = mroz)
+
+data.frame(
+  Test       = c("Breusch Pagan", "White (special form)"),
+  LM_manual  = round(c(bp_LM, white_LM), 3),
+  LM_command = round(c(bp_cmd$statistic, white_cmd$statistic), 3),
+  df         = c(bp_cmd$parameter, white_cmd$parameter),
+  p_value    = signif(c(bp_cmd$p.value, white_cmd$p.value), 3)
+)
+```
+
+The numbers are identical, so the command is doing exactly the three steps we did by hand.
+
+## Heteroskedasticity Robust Standard Errors
+
+Once we know heteroskedasticity is present, the simplest fix is to keep the OLS coefficients and replace the usual standard errors with **heteroskedasticity robust** standard errors (Section 8.2). These remain valid in large samples whether or not the errors are homoskedastic, so the t and F tests built on them can be trusted.
+
+The `vcovHC()` function in `sandwich` computes the robust variance matrix. The option `type = "HC1"` applies the small sample degrees of freedom correction used by Stata and most applied work. `coeftest()` then reports the coefficients with the robust standard errors.
+
+```{r robust}
+vc_robust <- vcovHC(lpm, type = "HC1")
+coeftest(lpm, vcov. = vc_robust)
+```
+
+We store the robust standard errors so we can use them in the final table.
+
+```{r robust-se}
+se_robust <- sqrt(diag(vc_robust))
+
+data.frame(
+  usual_SE  = round(coef(summary(lpm))[, "Std. Error"], 5),
+  robust_SE = round(se_robust, 5)
+)
+```
+
+The coefficients do not change at all, only the standard errors do. In this model the two sets are close, so none of our conclusions about significance change, but you can never know that in advance without computing both.
+
+Robust inference also applies to joint tests. To test whether the two child variables are jointly significant we pass the robust variance matrix to `waldtest()`.
+
+```{r robust-F}
+lpm_r <- lm(inlf ~ nwifeinc + educ + exper + I(exper^2) + age, data = mroz)
+waldtest(lpm, lpm_r, vcov = vc_robust, test = "F")
+```
+
+## Weighted Least Squares for the LPM
+
+If we know the form of the heteroskedasticity, we can do better than robust standard errors and obtain more efficient estimates using **weighted least squares (WLS)**. In the LPM we know the form exactly, because $\text{Var}(y \mid \mathbf{x}) = p(\mathbf{x})[1 - p(\mathbf{x})]$. Following Section 8.5 of Wooldridge, the steps are
+
+1. Estimate the LPM by OLS and obtain the fitted values $\hat{y}$.
+2. Compute $\hat{h} = \hat{y}(1 - \hat{y})$, the estimated variance of each observation.
+3. Run OLS again with weights $1/\hat{h}$, so that observations with a noisier outcome get less weight.
+
+There is one practical problem. The weights only make sense if every fitted value lies strictly between 0 and 1, otherwise $\hat{h}$ is zero or negative. Let us check.
+
+```{r fitted-range}
+summary(mroz$yhat)
+sum(mroz$yhat <= 0 | mroz$yhat >= 1)
+```
+
+In our sample `r sum(mroz$yhat <= 0 | mroz$yhat >= 1)` fitted values fall outside the unit interval. Wooldridge suggests a simple adjustment. We pull these fitted values back to 0.01 and 0.99 before computing the weights.
+
+```{r wls}
+mroz$yhat_adj <- pmin(pmax(mroz$yhat, 0.01), 0.99)
+mroz$h_hat    <- mroz$yhat_adj * (1 - mroz$yhat_adj)
+
+lpm_wls <- lm(inlf ~ nwifeinc + educ + exper + I(exper^2) + age +
+                kidslt6 + kidsge6, data = mroz, weights = 1 / h_hat)
+summary(lpm_wls)
+```
+
+Most WLS estimates are close to OLS, which is what we expect since both estimate the same population parameters. The WLS standard errors are generally smaller, reflecting the efficiency gain from using what we know about the variance. Two coefficients do move, though. The return to education falls noticeably, and the effect of other income becomes small and insignificant. When OLS and WLS differ this much, it is a hint that the model may be misspecified, a point Wooldridge makes in Section 8.4.
+
+## Comparing the Three Approaches
+
+The table below shows OLS with the usual standard errors in column 1, the same OLS coefficients with robust standard errors in column 2, and WLS in column 3. In `stargazer` we supply the same OLS model twice and override the standard errors for the second column through the `se` argument. Stars in column 2 are computed from the robust standard errors.
+
+```{r stargazer, results='asis'}
+stargazer(lpm, lpm, lpm_wls,
+          se = list(NULL, se_robust, NULL),
+          column.labels = c("OLS", "OLS Robust SE", "WLS"),
+          dep.var.labels = "In labour force (inlf)",
+          covariate.labels = c("Other income (nwifeinc)", "Education",
+                               "Experience", "Experience squared", "Age",
+                               "Kids under 6", "Kids 6 to 18"),
+          model.numbers = TRUE,
+          omit.stat = c("ser", "f"),
+          title = "Linear Probability Model of Female Labour Force Participation",
+          header = FALSE, table.placement = "H", type = "latex")
+```
+
+Reading across the table, columns 1 and 2 have identical coefficients because they come from the same OLS regression, and only the standard errors in parentheses differ. Column 3 has different coefficients because WLS reweights the observations. In every column education and experience raise participation while young children lower it sharply, so the main story survives however we deal with heteroskedasticity. Other household income is the exception, since it loses its significance under WLS. Finally, do not compare the $R^2$ of WLS with OLS. The WLS $R^2$ measures the fit of the weighted regression, so its much higher value says nothing about which model explains labour force participation better.
+
+Which column should you report? Robust standard errors are the safe default because they do not require us to know the form of the variance. WLS is attractive in the LPM because the variance form is known, but it depends on fitted values inside the unit interval and on the adjustment we made for those outside it. Reporting both, as in this table, lets the reader see which conclusions hinge on that choice and which do not.
+
+# Exercises
+
+1. Create a data set of five districts with a primary key `district_id` and a literacy rate, and a data set of ten schools that records each school's `district_id`. Merge them, state whether the merge is 1:1 or 1:m, and verify the key of each file before merging.
+2. Append the 2024 and 2025 survey files after giving the 2024 file a `remit` column of `NA`. Confirm that `rbind()` now works.
+3. Re-estimate the LPM with `log(nwifeinc + 1)` in place of `nwifeinc`. Run the BP and White tests manually and with `bptest()`.
+4. Use the `hprice1` data from the `wooldridge` package to regress `price` on `lotsize`, `sqrft` and `bdrms`. Test for heteroskedasticity, then repeat the tests with `log(price)` as the dependent variable. What does the change in results tell you?

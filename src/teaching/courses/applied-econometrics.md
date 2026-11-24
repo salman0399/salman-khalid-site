@@ -69,4 +69,7 @@ labs:
   - title: "Functional Form, Dummy Variables and Binary Outcomes"
     desc: "Quadratics, interactions, dummy variables, the Chow test and the linear probability model"
     files: [/files/econometrics/labs/lab05-functional-form-dummies.pdf, /files/econometrics/labs/lab05-functional-form-dummies.Rmd]
+  - title: "Merging Data and Heteroskedasticity"
+    desc: "Primary keys, 1:1 and 1:m merges, appending survey rounds, Breusch Pagan and White tests, robust standard errors and weighted least squares"
+    files: [/files/econometrics/labs/lab06-merging-heteroskedasticity.pdf, /files/econometrics/labs/lab06-merging-heteroskedasticity.Rmd, /files/econometrics/labs/lab06-merging-heteroskedasticity-data.zip]
 ---
